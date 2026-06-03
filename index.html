@@ -4,85 +4,130 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Tồn Kho - Warehouse App</title>
+    <!-- Tailwind CSS cho giao diện -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS để xuất Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .modal { transition: opacity 0.25s ease; }
         body { background-color: #f3f4f6; }
+        /* Tùy chỉnh thanh cuộn cho đẹp */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">📦 Hệ Thống Quản Lý Tồn Kho</h1>
-            <div class="space-x-2">
-                <button onclick="openModal('importModal')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">➕ Nhập Kho</button>
-                <button onclick="openModal('exportModal')" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">📤 Xuất Kho</button>
-                <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">📊 Xuất Excel</button>
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <span class="text-3xl">📦</span> Hệ Thống Quản Lý Tồn Kho
+            </h1>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="openModal('importModal')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-1">
+                    <span>➕</span> Nhập Kho
+                </button>
+                <button onclick="openModal('exportModal')" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition flex items-center gap-1">
+                    <span>📤</span> Xuất Kho
+                </button>
+                <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-1">
+                    <span>📊</span> Xuất Excel
+                </button>
             </div>
         </div>
 
         <!-- Filter Section -->
-        <div class="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" id="filterBin" placeholder="Lọc theo Bin..." class="border p-2 rounded w-full" oninput="filterTable()">
-            <input type="text" id="filterTag" placeholder="Lọc theo TagID..." class="border p-2 rounded w-full" oninput="filterTable()">
-            <input type="text" id="filterCode" placeholder="Lọc theo Code..." class="border p-2 rounded w-full" oninput="filterTable()">
-            <button onclick="resetFilter()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Xóa lọc</button>
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 border border-gray-200">
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc Bin</label>
+                <input type="text" id="filterBin" placeholder="Nhập Bin..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc TagID</label>
+                <input type="text" id="filterTag" placeholder="Nhập TagID..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc Code</label>
+                <input type="text" id="filterCode" placeholder="Nhập Code..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+            </div>
+            <div class="flex items-end">
+                <button onclick="resetFilter()" class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition font-medium">
+                    🔄 Xóa bộ lọc
+                </button>
+            </div>
         </div>
 
         <!-- Inventory Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                        <th class="py-3 px-6 text-left">Thời gian</th>
-                        <th class="py-3 px-6 text-left">TagID</th>
-                        <th class="py-3 px-6 text-left">Bin</th>
-                        <th class="py-3 px-6 text-left">Code</th>
-                        <th class="py-3 px-6 text-left">Quality</th>
-                        <th class="py-3 px-6 text-center">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryBody" class="text-gray-600 text-sm font-light">
-                    <!-- Data will be loaded here -->
-                </tbody>
-            </table>
+        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="min-w-full leading-normal">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs font-bold leading-normal">
+                            <th class="py-3 px-6 text-left">Thời gian</th>
+                            <th class="py-3 px-6 text-left">TagID</th>
+                            <th class="py-3 px-6 text-left">Bin</th>
+                            <th class="py-3 px-6 text-left">Code</th>
+                            <th class="py-3 px-6 text-left">Quality</th>
+                            <th class="py-3 px-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody" class="text-gray-600 text-sm font-light">
+                        <!-- Dữ liệu sẽ load ở đây -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Modal: Nhập Kho (Manual & CSV) -->
     <div id="importModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
             <div class="py-4 text-left px-6">
-                <div class="flex justify-between items-center pb-3">
-                    <p class="text-2xl font-bold">Nhập Kho</p>
-                    <div class="cursor-pointer z-50" onclick="closeModal('importModal')">✖</div>
+                <div class="flex justify-between items-center pb-4 border-b">
+                    <p class="text-xl font-bold text-gray-800">📥 Nhập Kho</p>
+                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('importModal')">×</div>
                 </div>
                 
                 <!-- Tab Selection -->
-                <div class="flex mb-4 border-b">
-                    <button onclick="switchImportTab('manual')" id="tabManual" class="py-2 px-4 border-b-2 border-blue-500 font-bold">Thủ công</button>
-                    <button onclick="switchImportTab('csv')" id="tabCsv" class="py-2 px-4 border-b-2 border-transparent">File CSV</button>
+                <div class="flex mb-6 mt-4 border-b">
+                    <button onclick="switchImportTab('manual')" id="tabManual" class="py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition">Nhập thủ công</button>
+                    <button onclick="switchImportTab('csv')" id="tabCsv" class="py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition">Nhập File CSV</button>
                 </div>
 
                 <!-- Manual Form -->
-                <div id="manualForm" class="space-y-3">
-                    <input type="text" id="inTag" placeholder="TagID" class="w-full border p-2 rounded">
-                    <input type="text" id="inBin" placeholder="Bin" class="w-full border p-2 rounded">
-                    <input type="text" id="inCode" placeholder="Code" class="w-full border p-2 rounded">
-                    <input type="text" id="inQuality" placeholder="Quality" class="w-full border p-2 rounded">
-                    <button onclick="insertManual()" class="w-full bg-blue-600 text-white py-2 rounded">Lưu dữ liệu</button>
+                <div id="manualForm" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Tag ID</label>
+                        <input type="text" id="inTag" placeholder="Ví dụ: TAG123" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Bin</label>
+                        <input type="text" id="inBin" placeholder="Ví dụ: A-01" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Code</label>
+                        <input type="text" id="inCode" placeholder="Ví dụ: PROD-001" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Quality</label>
+                        <input type="text" id="inQuality" placeholder="Ví dụ: Grade A" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <button onclick="insertManual()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Lưu dữ liệu</button>
                 </div>
 
                 <!-- CSV Form -->
-                <div id="csvForm" class="hidden space-y-3">
-                    <p class="text-sm text-gray-500">Định dạng CSV: tagID, bin, code, quality</p>
-                    <input type="file" id="csvFile" accept=".csv" class="w-full border p-2 rounded">
-                    <button onclick="insertCSV()" class="w-full bg-blue-600 text-white py-2 rounded">Upload CSV</button>
+                <div id="csvForm" class="hidden space-y-4">
+                    <div class="bg-yellow-50 p-3 rounded border border-yellow-200">
+                        <p class="text-sm text-yellow-700"><strong>Định dạng CSV chuẩn:</strong><br>tagID, bin, code, quality</p>
+                    </div>
+                    <input type="file" id="csvFile" accept=".csv" class="w-full border p-2 rounded bg-gray-50">
+                    <button onclick="insertCSV()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Upload và Nhập Kho</button>
                 </div>
             </div>
         </div>
@@ -91,16 +136,19 @@
     <!-- Modal: Xuất Kho -->
     <div id="exportModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
             <div class="py-4 text-left px-6">
-                <div class="flex justify-between items-center pb-3">
-                    <p class="text-2xl font-bold">Xuất Kho</p>
-                    <div class="cursor-pointer z-50" onclick="closeModal('exportModal')">✖</div>
+                <div class="flex justify-between items-center pb-4 border-b">
+                    <p class="text-xl font-bold text-gray-800">📤 Xuất Kho</p>
+                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('exportModal')">×</div>
                 </div>
-                <div class="space-y-3">
-                    <p class="text-sm text-gray-600">Nhập TagID để xuất kho (xóa khỏi tồn kho):</p>
-                    <input type="text" id="outTag" placeholder="Nhập TagID..." class="w-full border p-2 rounded">
-                    <button onclick="removeInventory()" class="w-full bg-red-600 text-white py-2 rounded">Xác nhận Xuất Kho</button>
+                <div class="space-y-4 mt-6">
+                    <p class="text-sm text-gray-600">Nhập TagID của sản phẩm cần xuất kho. Sản phẩm này sẽ được xóa khỏi danh sách tồn kho.</p>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">TagID Sản phẩm</label>
+                        <input type="text" id="outTag" placeholder="Nhập chính xác TagID..." class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-red-400 outline-none">
+                    </div>
+                    <button onclick="removeInventory()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg transition">Xác nhận Xuất Kho</button>
                 </div>
             </div>
         </div>
@@ -109,19 +157,31 @@
     <!-- Modal: Chỉnh sửa -->
     <div id="editModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
             <div class="py-4 text-left px-6">
-                <div class="flex justify-between items-center pb-3">
-                    <p class="text-2xl font-bold">Chỉnh sửa</p>
-                    <div class="cursor-pointer z-50" onclick="closeModal('editModal')">✖</div>
+                <div class="flex justify-between items-center pb-4 border-b">
+                    <p class="text-xl font-bold text-gray-800">✏️ Chỉnh sửa thông tin</p>
+                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('editModal')">×</div>
                 </div>
                 <input type="hidden" id="editId">
-                <div class="space-y-3">
-                    <input type="text" id="editTag" placeholder="TagID" class="w-full border p-2 rounded">
-                    <input type="text" id="editBin" placeholder="Bin" class="w-full border p-2 rounded">
-                    <input type="text" id="editCode" placeholder="Code" class="w-full border p-2 rounded">
-                    <input type="text" id="editQuality" placeholder="Quality" class="w-full border p-2 rounded">
-                    <button onclick="updateInventory()" class="w-full bg-blue-600 text-white py-2 rounded">Cập nhật</button>
+                <div class="space-y-4 mt-6">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">TagID</label>
+                        <input type="text" id="editTag" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Bin</label>
+                        <input type="text" id="editBin" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Code</label>
+                        <input type="text" id="editCode" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Quality</label>
+                        <input type="text" id="editQuality" class="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <button onclick="updateInventory()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Cập nhật thay đổi</button>
                 </div>
             </div>
         </div>
@@ -131,44 +191,58 @@
         // --- Cấu hình Supabase ---
         const SUPABASE_URL = 'https://ayxhdqaendspvdxibayh.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eGhkcWFlbmRzcHZkeGliYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDAzMDQsImV4cCI6MjA5NTUxNjMwNH0.MOmERW-oVJitj6fAB85439_nxqeyYMQhQ5rYr8TF-Fc';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // SỬA LỖI: Đổi tên biến thành supabaseClient để không trùng với tên thư viện
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allData = [];
 
-        // Khởi tạo load dữ liệu
+        // Khởi tạo load dữ liệu từ Database
         async function loadData() {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('inventory')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) console.error('Error loading:', error);
-            else {
+            if (error) {
+                console.error('Error loading:', error);
+                alert('Lỗi tải dữ liệu: ' + error.message);
+            } else {
                 allData = data;
                 renderTable(data);
             }
         }
 
+        // Hiển thị dữ liệu ra bảng
         function renderTable(data) {
             const tbody = document.getElementById('inventoryBody');
             tbody.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-10 text-center text-gray-400 italic">Không tìm thấy dữ liệu tồn kho nào...</td></tr>';
+                return;
+            }
+
             data.forEach(item => {
                 tbody.innerHTML += `
-                    <tr class="border-b border-gray-200 hover:bg-gray-50">
-                        <td class="py-3 px-6 text-left">${new Date(item.created_at).toLocaleString('vi-VN')}</td>
-                        <td class="py-3 px-6 text-left font-medium">${item.tag_id}</td>
-                        <td class="py-3 px-6 text-left">${item.bin}</td>
-                        <td class="py-3 px-6 text-left">${item.code}</td>
-                        <td class="py-3 px-6 text-left">${item.quality}</td>
+                    <tr class="border-b border-gray-100 hover:bg-blue-50 transition">
+                        <td class="py-3 px-6 text-left text-gray-500">${new Date(item.created_at).toLocaleString('vi-VN')}</td>
+                        <td class="py-3 px-6 text-left font-semibold text-gray-800">${item.tag_id}</td>
+                        <td class="py-3 px-6 text-left">${item.bin || '-'}</td>
+                        <td class="py-3 px-6 text-left">${item.code || '-'}</td>
+                        <td class="py-3 px-6 text-left">
+                            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs">${item.quality || '-'}</span>
+                        </td>
                         <td class="py-3 px-6 text-center">
-                            <button onclick="openEditModal(${item.id}, '${item.tag_id}', '${item.bin}', '${item.code}', '${item.quality}')" class="text-blue-500 hover:underline">Sửa</button>
+                            <button onclick="openEditModal(${item.id}, '${item.tag_id}', '${item.bin}', '${item.code}', '${item.quality}')" 
+                                class="text-blue-600 hover:text-blue-800 font-medium transition underline">Sửa</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // --- Lọc dữ liệu ---
+        // --- Hệ thống lọc (Filter) ---
         function filterTable() {
             const bin = document.getElementById('filterBin').value.toLowerCase();
             const tag = document.getElementById('filterTag').value.toLowerCase();
@@ -189,7 +263,7 @@
             renderTable(allData);
         }
 
-        // --- Nhập Kho (Manual) ---
+        // --- Nhập Kho Thủ Công ---
         async function insertManual() {
             const payload = {
                 tag_id: document.getElementById('inTag').value,
@@ -197,16 +271,24 @@
                 code: document.getElementById('inCode').value,
                 quality: document.getElementById('inQuality').value,
             };
-            const { error } = await supabase.from('inventory').insert([payload]);
+
+            if(!payload.tag_id) return alert('Vui lòng nhập ít nhất TagID');
+
+            const { error } = await supabaseClient.from('inventory').insert([payload]);
             if (error) alert('Lỗi: ' + error.message);
             else {
-                alert('Nhập kho thành công!');
+                alert('✅ Nhập kho thành công!');
                 closeModal('importModal');
+                // Reset form
+                document.getElementById('inTag').value = '';
+                document.getElementById('inBin').value = '';
+                document.getElementById('inCode').value = '';
+                document.getElementById('inQuality').value = '';
                 loadData();
             }
         }
 
-        // --- Nhập Kho (CSV) ---
+        // --- Nhập Kho qua CSV ---
         async function insertCSV() {
             const fileInput = document.getElementById('csvFile');
             const file = fileInput.files[0];
@@ -215,16 +297,21 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const text = e.target.result;
-                const rows = text.split('\n').slice(1); // Bỏ header
+                const rows = text.split('\n').slice(1); // Bỏ dòng tiêu đề đầu tiên
                 const dataToInsert = rows.filter(row => row.trim()).map(row => {
                     const cols = row.split(',');
-                    return { tag_id: cols[0], bin: cols[1], code: cols[2], quality: cols[3] };
+                    return { 
+                        tag_id: cols[0]?.trim(), 
+                        bin: cols[1]?.trim(), 
+                        code: cols[2]?.trim(), 
+                        quality: cols[3]?.trim() 
+                    };
                 });
 
-                const { error } = await supabase.from('inventory').insert(dataToInsert);
+                const { error } = await supabaseClient.from('inventory').insert(dataToInsert);
                 if (error) alert('Lỗi upload: ' + error.message);
                 else {
-                    alert('Nhập kho CSV thành công!');
+                    alert('✅ Nhập kho CSV thành công!');
                     closeModal('importModal');
                     loadData();
                 }
@@ -232,21 +319,24 @@
             reader.readAsText(file);
         }
 
-        // --- Xuất Kho ---
+        // --- Xuất Kho (Xóa theo TagID) ---
         async function removeInventory() {
             const tagId = document.getElementById('outTag').value;
-            if (!tagId) return alert('Nhập TagID');
+            if (!tagId) return alert('Vui lòng nhập TagID');
 
-            const { error } = await supabase.from('inventory').delete().eq('tag_id', tagId);
+            if(!confirm(`Bạn có chắc chắn muốn xuất kho sản phẩm có TagID: ${tagId}?`)) return;
+
+            const { error } = await supabaseClient.from('inventory').delete().eq('tag_id', tagId);
             if (error) alert('Lỗi: ' + error.message);
             else {
-                alert('Đã xuất kho TagID: ' + tagId);
+                alert('✅ Đã xuất kho sản phẩm thành công!');
                 closeModal('exportModal');
+                document.getElementById('outTag').value = '';
                 loadData();
             }
         }
 
-        // --- Chỉnh sửa ---
+        // --- Chỉnh sửa dữ liệu ---
         function openEditModal(id, tag, bin, code, quality) {
             document.getElementById('editId').value = id;
             document.getElementById('editTag').value = tag;
@@ -264,24 +354,25 @@
                 code: document.getElementById('editCode').value,
                 quality: document.getElementById('editQuality').value,
             };
-            const { error } = await supabase.from('inventory').update(payload).eq('id', id);
+            const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
             if (error) alert('Lỗi cập nhật: ' + error.message);
             else {
-                alert('Cập nhật thành công!');
+                alert('✅ Cập nhật thành công!');
                 closeModal('editModal');
                 loadData();
             }
         }
 
-        // --- Xuất Excel ---
+        // --- Xuất file Excel ---
         function exportToExcel() {
+            if (allData.length === 0) return alert('Không có dữ liệu để xuất!');
             const ws = XLSX.utils.json_to_sheet(allData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-            XLSX.writeFile(wb, "TonKho_Database.xlsx");
+            XLSX.writeFile(wb, "TonKho_Warehouse_Data.xlsx");
         }
 
-        // --- UI Helper functions ---
+        // --- Hàm điều khiển Giao diện (UI) ---
         function openModal(id) {
             document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none');
         }
@@ -289,20 +380,25 @@
             document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
         }
         function switchImportTab(tab) {
+            const manualForm = document.getElementById('manualForm');
+            const csvForm = document.getElementById('csvForm');
+            const tabManual = document.getElementById('tabManual');
+            const tabCsv = document.getElementById('tabCsv');
+
             if (tab === 'manual') {
-                document.getElementById('manualForm').classList.remove('hidden');
-                document.getElementById('csvForm').classList.add('hidden');
-                document.getElementById('tabManual').className = 'py-2 px-4 border-b-2 border-blue-500 font-bold';
-                document.getElementById('tabCsv').className = 'py-2 px-4 border-b-2 border-transparent';
+                manualForm.classList.remove('hidden');
+                csvForm.classList.add('hidden');
+                tabManual.className = 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition';
+                tabCsv.className = 'py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition';
             } else {
-                document.getElementById('manualForm').classList.add('hidden');
-                document.getElementById('csvForm').classList.remove('hidden');
-                document.getElementById('tabCsv').className = 'py-2 px-4 border-b-2 border-blue-500 font-bold';
-                document.getElementById('tabManual').className = 'py-2 px-4 border-b-2 border-transparent';
+                manualForm.classList.add('hidden');
+                csvForm.classList.remove('hidden');
+                tabCsv.className = 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition';
+                tabManual.className = 'py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition';
             }
         }
 
-        // Start
+        // Khởi chạy lần đầu
         loadData();
     </script>
 </body>
