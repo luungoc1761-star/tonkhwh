@@ -1,97 +1,149 @@
-import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
-
-export default function Dashboard() {
-  const [metrics, setMetrics] = useState({
-    total_physical: 0,
-    discrepancy: 0,
-    discrepancy_percentage: 0,
-    mismatched_tags: 0,
-    duplicate_tags: 0
-  });
-
-  // Hàm lấy dữ liệu từ View dashboard_metrics
-  const fetchMetrics = async () => {
-    const { data, error } = await supabase
-      .from('dashboard_metrics')
-      .select('*')
-      .single();
-    
-    if (data && !error) {
-      setMetrics(data);
-    }
-  };
-
-  useEffect(() => {
-    fetchMetrics();
-
-    // Lắng nghe sự thay đổi thực tế trên bảng physical_scans
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'physical_scans' },
-        () => {
-          // Khi có bất kỳ thay đổi nào (thêm, sửa, xóa quét thực tế), chạy lại hàm tính toán
-          fetchMetrics();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      {/* Container các thẻ chỉ số giống trong hình */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHM System Pro</title>
+    <!-- Nhúng Tailwind CSS để làm giao diện đẹp giống ảnh -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Nhúng thư viện Supabase JS qua CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6 font-sans">
+    <div class="max-w-7xl mx-auto">
         
-        {/* Card 1: Tổng tồn kho */}
-        <div className="border border-blue-500 bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase">Tổng Tồn Kho</p>
-          <p className="text-3xl font-bold text-slate-800 my-2">
-            {metrics.total_physical.toLocaleString()}
-          </p>
-          <p className="text-[10px] text-slate-400 font-medium">THỰC TẾ TẠI KHO (PCS)</p>
+        <!-- THANH TIÊU ĐỀ & NÚT BẤM -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-6 border-slate-200">
+            <div>
+                <p class="text-[10px] font-bold text-indigo-600 tracking-wider uppercase mb-1">INVENTORY DATA ANALYSIS</p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    WHM System <span class="text-indigo-600">Pro</span> Finished Goods
+                </h1>
+            </div>
+            <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+                     MÁY QUÉT
+                </button>
+                <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+                     NHẬP KHO (IN)
+                </button>
+                <button class="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+                     XUẤT KHO (OUT)
+                </button>
+                <button onclick="fetchMetrics()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+                     LÀM MỚI
+                </button>
+            </div>
         </div>
 
-        {/* Card 2: Chênh lệch hệ thống */}
-        <div className="border border-sky-400 bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase">Chênh lệch hệ thống</p>
-          <p className="text-3xl font-bold text-amber-500 my-2">
-            {metrics.discrepancy > 0 ? `+${metrics.discrepancy}` : metrics.discrepancy}
-          </p>
-          <span className="inline-block bg-amber-100 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-            {metrics.discrepancy_percentage}% so với hệ thống
-          </span>
+        <!-- 5 THẺ CHỈ SỐ DỰA TRÊN ẢNH CỦA ANH -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            
+            <!-- Thẻ 1: Tổng tồn kho (Viền xanh dương) -->
+            <div class="border border-indigo-400 bg-white rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Tổng Tồn Kho</p>
+                <p id="total_physical" class="text-3xl font-extrabold text-slate-800 my-2">0</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase">THỰC TẾ TẠI KHO (PCS)</p>
+            </div>
+
+            <!-- Thẻ 2: Chênh lệch hệ thống (Viền xanh lam nhạt) -->
+            <div class="border border-sky-400 bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Chênh lệch hệ thống</p>
+                    <p id="discrepancy" class="text-3xl font-extrabold text-amber-500 my-2">0</p>
+                </div>
+                <div class="mt-1">
+                    <span id="discrepancy_badge" class="inline-block bg-amber-100 text-amber-600 text-[10px] font-bold px-2 py-1 rounded-full">
+                        0% so với hệ thống
+                    </span>
+                </div>
+            </div>
+
+            <!-- Thẻ 3: Tag ID không khớp (Viền đỏ) -->
+            <div class="border border-rose-400 bg-white rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Tag ID không khớp</p>
+                <p id="mismatched_tags" class="text-3xl font-extrabold text-red-500 my-2">0</p>
+                <p class="text-[10px] text-red-500 font-bold uppercase">LỖI DỮ LIỆU</p>
+            </div>
+
+            <!-- Thẻ 4: Cần chuyển kho (Viền cam) -->
+            <div class="border border-amber-400 bg-white rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Cần chuyển kho</p>
+                <p id="transfer_needed" class="text-3xl font-extrabold text-amber-500 my-2">0</p>
+                <p class="text-[10px] text-amber-500 font-bold uppercase">(Hiện tại: 50, 62)</p>
+            </div>
+
+            <!-- Thẻ 5: Lỗi trùng Tag ID (Viền đỏ) -->
+            <div class="border border-rose-400 bg-white rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Lỗi trùng Tag ID</p>
+                <p id="duplicate_tags" class="text-3xl font-extrabold text-red-500 my-2">0</p>
+                <p class="text-[10px] text-red-500 font-bold uppercase">CẦN XÓA BỚT</p>
+            </div>
+            
         </div>
 
-        {/* Card 3: Tag ID không khớp */}
-        <div className="border border-red-400 bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase">Tag ID không khớp</p>
-          <p className="text-3xl font-bold text-red-500 my-2">{metrics.mismatched_tags}</p>
-          <p className="text-[10px] text-red-500 font-semibold uppercase">Lỗi dữ liệu</p>
+        <!-- Khung phân tích cảnh báo -->
+        <div class="border border-slate-200 bg-white rounded-2xl p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-slate-900 rounded"></span>
+                TRUNG TÂM PHÂN TÍCH CẢNH BÁO RỦI RO
+            </h2>
+            <p class="text-sm text-slate-400 mt-2">Dữ liệu được cập nhật tự động và theo thời gian thực từ Supabase.</p>
         </div>
-
-        {/* Card 4: Cần chuyển kho */}
-        <div className="border border-amber-400 bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase">Cần chuyển kho</p>
-          <p className="text-3xl font-bold text-amber-500 my-2">0</p>
-          <p className="text-[10px] text-amber-500 font-medium">(Hiện tại: 50, 62)</p>
-        </div>
-
-        {/* Card 5: Lỗi trùng Tag ID */}
-        <div className="border border-red-400 bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase">Lỗi trùng Tag ID</p>
-          <p className="text-3xl font-bold text-red-500 my-2">{metrics.duplicate_tags}</p>
-          <p className="text-[10px] text-red-500 font-semibold uppercase">Cần xóa bớt</p>
-        </div>
-
-      </div>
     </div>
-  );
-}
+
+    <!-- PHẦN XỬ LÝ KẾT NỐI SUPABASE VÀ CẬP NHẬT ĐỘNG -->
+    <script>
+        // 1. Cấu hình thông tin Supabase của anh vào đây
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // Thay bằng URL dự án Supabase của anh
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Thay bằng Anon Key của anh
+
+        // Khởi tạo Supabase Client từ thư viện CDN
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 2. Hàm lấy dữ liệu từ View 'dashboard_metrics' đã tạo ở Bước 2 trước đó
+        async function fetchMetrics() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('dashboard_metrics')
+                    .select('*')
+                    .single();
+                
+                if (error) throw error;
+
+                if (data) {
+                    // Cập nhật giá trị vào giao diện
+                    document.getElementById('total_physical').innerText = Number(data.total_physical).toLocaleString();
+                    
+                    const disc = data.discrepancy;
+                    document.getElementById('discrepancy').innerText = disc > 0 ? `+${disc.toLocaleString()}` : disc.toLocaleString();
+                    document.getElementById('discrepancy_badge').innerText = `${data.discrepancy_percentage}% so với hệ thống`;
+                    
+                    document.getElementById('mismatched_tags').innerText = data.mismatched_tags;
+                    document.getElementById('duplicate_tags').innerText = data.duplicate_tags;
+                }
+            } catch (err) {
+                console.error('Lỗi khi lấy dữ liệu từ Supabase:', err.message);
+            }
+        }
+
+        // Tự động chạy lần đầu tiên khi mở trang
+        fetchMetrics();
+
+        // 3. Đăng ký Realtime lắng nghe sự kiện trên bảng 'physical_scans'
+        // Khi nhân viên quét mã và lưu vào bảng, giao diện sẽ lập tức tự cập nhật số liệu
+        const channel = supabaseClient
+            .channel('schema-db-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'physical_scans' },
+                () => {
+                    console.log('Phát hiện thay đổi dữ liệu, đang tính toán lại chỉ số...');
+                    fetchMetrics();
+                }
+            )
+            .subscribe();
+    </script>
+</body>
+</html>
