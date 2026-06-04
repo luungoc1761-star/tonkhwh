@@ -3,196 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Tồn Kho - Warehouse App</title>
-    <!-- Tailwind CSS cho giao diện -->
+    <title>Warehouse Dashboard - Quản Lý Tồn Kho</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS để xuất Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Thêm thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .modal { transition: opacity 0.25s ease; }
-        body { background-color: #f3f4f6; }
+        body { background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <span class="text-3xl">📦</span> Hệ Thống Quản Lý Tồn Kho
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+                <span class="text-4xl">📦</span> Warehouse <span class="text-blue-600">Analytics</span>
             </h1>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="openModal('importModal')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-1">
+            <div class="flex flex-wrap gap-3">
+                <button onclick="openModal('importModal')" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition flex items-center gap-2 font-semibold">
                     <span>➕</span> Nhập Kho
                 </button>
-                <button onclick="openModal('exportModal')" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition flex items-center gap-1">
+                <button onclick="openModal('exportModal')" class="bg-red-500 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-red-600 transition flex items-center gap-2 font-semibold">
                     <span>📤</span> Xuất Kho
                 </button>
-                <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-1">
+                <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-emerald-700 transition flex items-center gap-2 font-semibold">
                     <span>📊</span> Xuất Excel
                 </button>
             </div>
         </div>
 
+        <!-- DASHBOARD SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Chart 1: Tỉ lệ theo Kho -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
+                <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 text-center">Phân bổ theo Kho (WH)</h3>
+                <div class="w-full max-w-[250px]">
+                    <canvas id="chartWh"></canvas>
+                </div>
+            </div>
+            <!-- Chart 2: Số lượng theo Bin -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 text-center">Số lượng theo Bin</h3>
+                <canvas id="chartBin"></canvas>
+            </div>
+            <!-- Chart 3: Top Quality -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 text-center">Top 5 Quality cao nhất</h3>
+                <canvas id="chartQuality"></canvas>
+            </div>
+        </div>
+
         <!-- Filter Section -->
-        <div class="bg-white p-4 rounded-lg shadow-sm mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 border border-gray-200">
+        <div class="bg-white p-5 rounded-2xl shadow-sm mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 border border-slate-200">
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc Bin</label>
-                <input type="text" id="filterBin" placeholder="Nhập Bin..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+                <label class="text-xs font-bold text-slate-400 uppercase">Lọc Bin</label>
+                <input type="text" id="filterBin" placeholder="Nhập Bin..." class="border border-slate-200 p-2 rounded-lg w-full focus:ring-2 focus:ring-blue-400 outline-none transition" oninput="filterTable()">
             </div>
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc TagID</label>
-                <input type="text" id="filterTag" placeholder="Nhập TagID..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+                <label class="text-xs font-bold text-slate-400 uppercase">Lọc TagID</label>
+                <input type="text" id="filterTag" placeholder="Nhập TagID..." class="border border-slate-200 p-2 rounded-lg w-full focus:ring-2 focus:ring-blue-400 outline-none transition" oninput="filterTable()">
             </div>
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc Code</label>
-                <input type="text" id="filterCode" placeholder="Nhập Code..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+                <label class="text-xs font-bold text-slate-400 uppercase">Lọc Code</label>
+                <input type="text" id="filterCode" placeholder="Nhập Code..." class="border border-slate-200 p-2 rounded-lg w-full focus:ring-2 focus:ring-blue-400 outline-none transition" oninput="filterTable()">
             </div>
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-semibold text-gray-500 uppercase">Lọc WH (Kho)</label>
-                <input type="text" id="filterWh" placeholder="Nhập WH..." class="border p-2 rounded w-full focus:ring-2 focus:ring-blue-400 outline-none" oninput="filterTable()">
+                <label class="text-xs font-bold text-slate-400 uppercase">Lọc WH (Kho)</label>
+                <input type="text" id="filterWh" placeholder="Nhập WH..." class="border border-slate-200 p-2 rounded-lg w-full focus:ring-2 focus:ring-blue-400 outline-none transition" oninput="filterTable()">
             </div>
             <div class="flex items-end">
-                <button onclick="resetFilter()" class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition font-medium">
+                <button onclick="resetFilter()" class="w-full bg-slate-100 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-200 transition font-bold text-sm">
                     🔄 Xóa bộ lọc
                 </button>
             </div>
         </div>
 
         <!-- Inventory Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
             <div class="overflow-x-auto">
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs font-bold leading-normal">
-                            <th class="py-3 px-6 text-left">Thời gian</th>
-                            <th class="py-3 px-6 text-left">TagID</th>
-                            <th class="py-3 px-6 text-left">Bin</th>
-                            <th class="py-3 px-6 text-left">Code</th>
-                            <th class="py-3 px-6 text-left">WH</th>
-                            <th class="py-3 px-6 text-left">Quality</th>
-                            <th class="py-3 px-6 text-center">Hành động</th>
+                        <tr class="bg-slate-50 text-slate-500 uppercase text-xs font-bold leading-normal">
+                            <th class="py-4 px-6 text-left">Thời gian</th>
+                            <th class="py-4 px-6 text-left">TagID</th>
+                            <th class="py-4 px-6 text-left">Bin</th>
+                            <th class="py-4 px-6 text-left">Code</th>
+                            <th class="py-4 px-6 text-left">WH</th>
+                            <th class="py-4 px-6 text-left">Quality</th>
+                            <th class="py-4 px-6 text-center">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody id="inventoryBody" class="text-gray-600 text-sm font-light">
-                        <!-- Dữ liệu sẽ load ở đây -->
+                    <tbody id="inventoryBody" class="text-slate-600 text-sm font-light">
+                        <!-- Data load here -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Nhập Kho (Manual & CSV) -->
+    <!-- MODALS (Giữ nguyên logic như bản trước) -->
     <div id="importModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
+        <div class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto">
             <div class="py-4 text-left px-6">
                 <div class="flex justify-between items-center pb-4 border-b">
-                    <p class="text-xl font-bold text-gray-800">📥 Nhập Kho</p>
-                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('importModal')">×</div>
+                    <p class="text-xl font-bold text-slate-800">📥 Nhập Kho</p>
+                    <div class="cursor-pointer text-slate-400 hover:text-slate-600 text-2xl" onclick="closeModal('importModal')">×</div>
                 </div>
-                
                 <div class="flex mb-6 mt-4 border-b">
-                    <button onclick="switchImportTab('manual')" id="tabManual" class="py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition">Nhập thủ công</button>
-                    <button onclick="switchImportTab('csv')" id="tabCsv" class="py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition">Nhập File CSV</button>
+                    <button onclick="switchImportTab('manual')" id="tabManual" class="py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition">Thủ công</button>
+                    <button onclick="switchImportTab('csv')" id="tabCsv" class="py-2 px-4 border-b-2 border-transparent text-slate-500 hover:text-blue-500 transition">File CSV</button>
                 </div>
-
-                <!-- Manual Form -->
                 <div id="manualForm" class="space-y-4">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Tag ID</label>
-                        <input type="text" id="inTag" placeholder="Ví dụ: TAG123" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Bin</label>
-                        <input type="text" id="inBin" placeholder="Ví dụ: A-01" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Code</label>
-                        <input type="text" id="inCode" placeholder="Ví dụ: PROD-001" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">WH (Kho)</label>
-                        <input type="text" id="inWh" placeholder="Ví dụ: WH-01" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Quality</label>
-                        <input type="text" id="inQuality" placeholder="Ví dụ: Grade A" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <button onclick="insertManual()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Lưu dữ liệu</button>
+                    <input type="text" id="inTag" placeholder="Tag ID" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="inBin" placeholder="Bin" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="inCode" placeholder="Code" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="inWh" placeholder="WH (Kho)" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="inQuality" placeholder="Quality" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <button onclick="insertManual()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow transition">Lưu dữ liệu</button>
                 </div>
-
-                <!-- CSV Form -->
                 <div id="csvForm" class="hidden space-y-4">
-                    <div class="bg-yellow-50 p-3 rounded border border-yellow-200">
-                        <p class="text-sm text-yellow-700"><strong>Định dạng CSV chuẩn:</strong><br>tagID, bin, code, wh, quality</p>
-                    </div>
-                    <input type="file" id="csvFile" accept=".csv" class="w-full border p-2 rounded bg-gray-50">
-                    <button onclick="insertCSV()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Upload và Nhập Kho</button>
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-700">Định dạng: tagID, bin, code, wh, quality</div>
+                    <input type="file" id="csvFile" accept=".csv" class="w-full border p-2 rounded-lg bg-slate-50">
+                    <button onclick="insertCSV()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow transition">Upload CSV</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Xuất Kho -->
     <div id="exportModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
+        <div class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto">
             <div class="py-4 text-left px-6">
                 <div class="flex justify-between items-center pb-4 border-b">
-                    <p class="text-xl font-bold text-gray-800">📤 Xuất Kho</p>
-                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('exportModal')">×</div>
+                    <p class="text-xl font-bold text-slate-800">📤 Xuất Kho</p>
+                    <div class="cursor-pointer text-slate-400 hover:text-slate-600 text-2xl" onclick="closeModal('exportModal')">×</div>
                 </div>
                 <div class="space-y-4 mt-6">
-                    <p class="text-sm text-gray-600">Nhập TagID của sản phẩm cần xuất kho. Sản phẩm này sẽ được xóa khỏi danh sách tồn kho.</p>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">TagID Sản phẩm</label>
-                        <input type="text" id="outTag" placeholder="Nhập chính xác TagID..." class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-red-400">
-                    </div>
-                    <button onclick="removeInventory()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg transition">Xác nhận Xuất Kho</button>
+                    <input type="text" id="outTag" placeholder="Nhập TagID để xuất..." class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-red-400">
+                    <button onclick="removeInventory()" class="w-full bg-red-500 text-white py-3 rounded-lg font-bold hover:bg-red-600 shadow transition">Xác nhận Xuất</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Chỉnh sửa -->
     <div id="editModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto border border-gray-200">
+        <div class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto">
             <div class="py-4 text-left px-6">
                 <div class="flex justify-between items-center pb-4 border-b">
-                    <p class="text-xl font-bold text-gray-800">✏️ Chỉnh sửa thông tin</p>
-                    <div class="cursor-pointer text-gray-400 hover:text-gray-600 text-2xl" onclick="closeModal('editModal')">×</div>
+                    <p class="text-xl font-bold text-slate-800">✏️ Chỉnh sửa</p>
+                    <div class="cursor-pointer text-slate-400 hover:text-slate-600 text-2xl" onclick="closeModal('editModal')">×</div>
                 </div>
                 <input type="hidden" id="editId">
                 <div class="space-y-4 mt-6">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">TagID</label>
-                        <input type="text" id="editTag" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Bin</label>
-                        <input type="text" id="editBin" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Code</label>
-                        <input type="text" id="editCode" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">WH (Kho)</label>
-                        <input type="text" id="editWh" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase">Quality</label>
-                        <input type="text" id="editQuality" class="w-full border p-2 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-400">
-                    </div>
-                    <button onclick="updateInventory()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Cập nhật thay đổi</button>
+                    <input type="text" id="editTag" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="editBin" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="editCode" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="editWh" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="editQuality" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
+                    <button onclick="updateInventory()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow transition">Cập nhật</button>
                 </div>
             </div>
         </div>
@@ -204,48 +181,105 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allData = [];
+        let charts = {}; // Lưu trữ đối tượng chart để update
 
         async function loadData() {
-            const { data, error } = await supabaseClient
-                .from('inventory')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error loading:', error);
-                alert('Lỗi tải dữ liệu: ' + error.message);
-            } else {
+            const { data, error } = await supabaseClient.from('inventory').select('*').order('created_at', { ascending: false });
+            if (error) alert('Lỗi: ' + error.message);
+            else {
                 allData = data;
                 renderTable(data);
+                initCharts(data); // Vẽ biểu đồ khi load data
             }
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('inventoryBody');
             tbody.innerHTML = '';
-            
             if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-gray-400 italic">Không tìm thấy dữ liệu tồn kho nào...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-slate-400 italic">Không có dữ liệu...</td></tr>';
                 return;
             }
-
             data.forEach(item => {
                 tbody.innerHTML += `
-                    <tr class="border-b border-gray-100 hover:bg-blue-50 transition">
-                        <td class="py-3 px-6 text-left text-gray-500">${new Date(item.created_at).toLocaleString('vi-VN')}</td>
-                        <td class="py-3 px-6 text-left font-semibold text-gray-800">${item.tag_id}</td>
-                        <td class="py-3 px-6 text-left">${item.bin || '-'}</td>
-                        <td class="py-3 px-6 text-left">${item.code || '-'}</td>
-                        <td class="py-3 px-6 text-left font-medium text-blue-600">${item.wh || '-'}</td>
-                        <td class="py-3 px-6 text-left">
-                            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs">${item.quality || '-'}</span>
-                        </td>
-                        <td class="py-3 px-6 text-center">
-                            <button onclick="openEditModal(${item.id}, '${item.tag_id}', '${item.bin}', '${item.code}', '${item.wh}', '${item.quality}')" 
-                                class="text-blue-600 hover:text-blue-800 font-medium transition underline">Sửa</button>
-                        </td>
-                    </tr>
-                `;
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                        <td class="py-4 px-6 text-left text-slate-500">${new Date(item.created_at).toLocaleString('vi-VN')}</td>
+                        <td class="py-4 px-6 text-left font-semibold text-slate-800">${item.tag_id}</td>
+                        <td class="py-4 px-6 text-left">${item.bin || '-'}</td>
+                        <td class="py-4 px-6 text-left">${item.code || '-'}</td>
+                        <td class="py-4 px-6 text-left font-medium text-blue-600">${item.wh || '-'}</td>
+                        <td class="py-4 px-6 text-left"><span class="px-2 py-1 bg-slate-100 rounded-full text-xs">${item.quality || '-'}</span></td>
+                        <td class="py-4 px-6 text-center"><button onclick="openEditModal(${item.id}, '${item.tag_id}', '${item.bin}', '${item.code}', '${item.wh}', '${item.quality}')" class="text-blue-600 hover:underline font-medium">Sửa</button></td>
+                    </tr>`;
+            });
+        }
+
+        // --- LOGIC BIỂU ĐỒ ---
+        function initCharts(data) {
+            // 1. Xử lý dữ liệu cho biểu đồ WH (Kho)
+            const whCounts = {};
+            data.forEach(item => {
+                const wh = item.wh || 'Không xác định';
+                whCounts[wh] = (whCounts[wh] || 0) + 1;
+            });
+
+            // 2. Xử lý dữ liệu cho biểu đồ Bin
+            const binCounts = {};
+            data.forEach(item => {
+                const bin = item.bin || 'Không xác định';
+                binCounts[bin] = (binCounts[bin] || 0) + 1;
+            });
+
+            // 3. Xử lý Top 5 Quality
+            const sortedQuality = [...data]
+                .sort((a, b) => (parseFloat(b.quality) || 0) - (parseFloat(a.quality) || 0))
+                .slice(0, 5);
+
+            // Vẽ biểu đồ WH (Pie)
+            if(charts.wh) charts.wh.destroy();
+            charts.wh = new Chart(document.getElementById('chartWh'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(whCounts),
+                    datasets: [{
+                        data: Object.values(whCounts),
+                        backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+            });
+
+            // Vẽ biểu đồ Bin (Bar)
+            if(charts.bin) charts.bin.destroy();
+            charts.bin = new Chart(document.getElementById('chartBin'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(binCounts),
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: Object.values(binCounts),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 5
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+
+            // Vẽ biểu đồ Quality (Horizontal Bar)
+            if(charts.quality) charts.quality.destroy();
+            charts.quality = new Chart(document.getElementById('chartQuality'), {
+                type: 'bar',
+                data: {
+                    labels: sortedQuality.map(i => i.code),
+                    datasets: [{
+                        label: 'Giá trị Quality',
+                        data: sortedQuality.map(i => parseFloat(i.quality) || 0),
+                        backgroundColor: '#10b981',
+                        borderRadius: 5
+                    }]
+                },
+                options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
             });
         }
 
@@ -262,6 +296,7 @@
                 (item.wh || '').toLowerCase().includes(wh)
             );
             renderTable(filtered);
+            initCharts(filtered); // Cập nhật biểu đồ theo filter
         }
 
         function resetFilter() {
@@ -270,6 +305,7 @@
             document.getElementById('filterCode').value = '';
             document.getElementById('filterWh').value = '';
             renderTable(allData);
+            initCharts(allData);
         }
 
         async function insertManual() {
@@ -280,67 +316,36 @@
                 wh: document.getElementById('inWh').value,
                 quality: document.getElementById('inQuality').value,
             };
-
-            if(!payload.tag_id) return alert('Vui lòng nhập ít nhất TagID');
-
+            if(!payload.tag_id) return alert('Vui lòng nhập TagID');
             const { error } = await supabaseClient.from('inventory').insert([payload]);
             if (error) alert('Lỗi: ' + error.message);
-            else {
-                alert('✅ Nhập kho thành công!');
-                closeModal('importModal');
-                document.getElementById('inTag').value = '';
-                document.getElementById('inBin').value = '';
-                document.getElementById('inCode').value = '';
-                document.getElementById('inWh').value = '';
-                document.getElementById('inQuality').value = '';
-                loadData();
-            }
+            else { alert('✅ Thành công!'); closeModal('importModal'); loadData(); }
         }
 
         async function insertCSV() {
-            const fileInput = document.getElementById('csvFile');
-            const file = fileInput.files[0];
-            if (!file) return alert('Vui lòng chọn file CSV');
-
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) return alert('Chọn file CSV');
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const text = e.target.result;
-                const rows = text.split('\n').slice(1); 
+                const rows = e.target.result.split('\n').slice(1);
                 const dataToInsert = rows.filter(row => row.trim()).map(row => {
                     const cols = row.split(',');
-                    return { 
-                        tag_id: cols[0]?.trim(), 
-                        bin: cols[1]?.trim(), 
-                        code: cols[2]?.trim(), 
-                        wh: cols[3]?.trim(), 
-                        quality: cols[4]?.trim() 
-                    };
+                    return { tag_id: cols[0]?.trim(), bin: cols[1]?.trim(), code: cols[2]?.trim(), wh: cols[3]?.trim(), quality: cols[4]?.trim() };
                 });
-
                 const { error } = await supabaseClient.from('inventory').insert(dataToInsert);
-                if (error) alert('Lỗi upload: ' + error.message);
-                else {
-                    alert('✅ Nhập kho CSV thành công!');
-                    closeModal('importModal');
-                    loadData();
-                }
+                if (error) alert('Lỗi: ' + error.message);
+                else { alert('✅ Thành công!'); closeModal('importModal'); loadData(); }
             };
             reader.readAsText(file);
         }
 
         async function removeInventory() {
             const tagId = document.getElementById('outTag').value;
-            if (!tagId) return alert('Vui lòng nhập TagID');
-            if(!confirm(`Bạn có chắc chắn muốn xuất kho sản phẩm có TagID: ${tagId}?`)) return;
-
+            if (!tagId) return alert('Nhập TagID');
+            if(!confirm('Xác nhận xuất kho?')) return;
             const { error } = await supabaseClient.from('inventory').delete().eq('tag_id', tagId);
             if (error) alert('Lỗi: ' + error.message);
-            else {
-                alert('✅ Đã xuất kho sản phẩm thành công!');
-                closeModal('exportModal');
-                document.getElementById('outTag').value = '';
-                loadData();
-            }
+            else { alert('✅ Thành công!'); closeModal('exportModal'); loadData(); }
         }
 
         function openEditModal(id, tag, bin, code, wh, quality) {
@@ -363,45 +368,25 @@
                 quality: document.getElementById('editQuality').value,
             };
             const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
-            if (error) alert('Lỗi cập nhật: ' + error.message);
-            else {
-                alert('✅ Cập nhật thành công!');
-                closeModal('editModal');
-                loadData();
-            }
+            if (error) alert('Lỗi: ' + error.message);
+            else { alert('✅ Thành công!'); closeModal('editModal'); loadData(); }
         }
 
         function exportToExcel() {
-            if (allData.length === 0) return alert('Không có dữ liệu để xuất!');
+            if (allData.length === 0) return alert('Không có dữ liệu!');
             const ws = XLSX.utils.json_to_sheet(allData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-            XLSX.writeFile(wb, "TonKho_Warehouse_Data.xlsx");
+            XLSX.writeFile(wb, "Warehouse_Report.xlsx");
         }
 
-        function openModal(id) {
-            document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none');
-        }
-        function closeModal(id) {
-            document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
-        }
+        function openModal(id) { document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none'); }
+        function closeModal(id) { document.getElementById(id).classList.add('opacity-0', 'pointer-events-none'); }
         function switchImportTab(tab) {
-            const manualForm = document.getElementById('manualForm');
-            const csvForm = document.getElementById('csvForm');
-            const tabManual = document.getElementById('tabManual');
-            const tabCsv = document.getElementById('tabCsv');
-
-            if (tab === 'manual') {
-                manualForm.classList.remove('hidden');
-                csvForm.classList.add('hidden');
-                tabManual.className = 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition';
-                tabCsv.className = 'py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition';
-            } else {
-                manualForm.classList.add('hidden');
-                csvForm.classList.remove('hidden');
-                tabCsv.className = 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition';
-                tabManual.className = 'py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-blue-500 transition';
-            }
+            document.getElementById('manualForm').classList.toggle('hidden', tab !== 'manual');
+            document.getElementById('csvForm').classList.toggle('hidden', tab !== 'csv');
+            document.getElementById('tabManual').className = tab === 'manual' ? 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition' : 'py-2 px-4 border-b-2 border-transparent text-slate-500 hover:text-blue-500 transition';
+            document.getElementById('tabCsv').className = tab === 'csv' ? 'py-2 px-4 border-b-2 border-blue-500 font-bold text-blue-600 transition' : 'py-2 px-4 border-b-2 border-transparent text-slate-500 hover:text-blue-500 transition';
         }
 
         loadData();
