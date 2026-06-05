@@ -28,53 +28,59 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
-    <!-- Header / Navbar -->
-    <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center flex-wrap gap-4">
-        <div class="flex items-center space-x-3">
+    <!-- Header / Navbar Responsive -->
+    <header class="bg-slate-900 text-white shadow-md py-4 px-4 sm:px-6 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <div class="flex items-center space-x-3 justify-center lg:justify-start">
             <i class="fa-solid fa-warehouse text-2xl text-blue-400"></i>
-            <span class="text-xl font-bold tracking-wider">HỆ THỐNG QUẢN LÝ VỊ TRÍ TỒN KHO</span>
+            <span class="text-lg sm:text-xl font-bold tracking-wider text-center lg:text-left">HỆ THỐNG QUẢN LÝ VỊ TRÍ TỒN KHO</span>
         </div>
         
-        <div class="flex items-center space-x-4">
-            <!-- Nút liên kết tới Kho Thành Phẩm -->
-            <a href="https://pqvinh99-glory.github.io/Ivenrory-FG/" target="_blank" class="bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md flex items-center">
-                <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Kho Thành Phẩm
-            </a>
-
-            <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                <i class="fa-solid fa-user-shield text-blue-400"></i>
-                <span class="font-medium">User:</span>
-                <select id="userSelector" onchange="handleUserChange()" class="bg-slate-700 text-white rounded px-2 py-0.5 border border-slate-600 focus:outline-none">
-                    <option value="Admin" selected>Admin (Toàn quyền)</option>
-                    <option value="Operator">Operator (Nhập/Xuất)</option>
-                    <option value="Viewer">Viewer (Chỉ xem)</option>
-                </select>
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-center lg:justify-end">
+            <!-- Nút liên kết tới Kho Thành Phẩm & User Selector -->
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+                <a href="https://pqvinh99-glory.github.io/Ivenrory-FG/" target="_blank" class="bg-amber-600 hover:bg-amber-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition duration-200 shadow-md flex items-center shrink-0">
+                    <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Kho Thành Phẩm
+                </a>
+                
+                <div class="flex items-center space-x-2 text-xs sm:text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 w-full sm:w-auto justify-between sm:justify-start">
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-user-shield text-blue-400"></i>
+                        <span class="font-medium">User:</span>
+                    </div>
+                    <select id="userSelector" onchange="handleUserChange()" class="bg-slate-700 text-white rounded px-2 py-0.5 border border-slate-600 focus:outline-none text-xs sm:text-sm">
+                        <option value="Admin" selected>Admin (Toàn quyền)</option>
+                        <option value="Operator">Operator (Nhập/Xuất)</option>
+                        <option value="Viewer">Viewer (Chỉ xem)</option>
+                    </select>
+                </div>
             </div>
-            <div class="flex space-x-2">
-                <button id="btnOpenInbound" onclick="openModal('inboundModal')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md">
+            
+            <!-- Nhóm nút hành động chính -->
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                <button id="btnOpenInbound" onclick="openModal('inboundModal')" class="bg-emerald-600 hover:bg-emerald-700 px-3 py-2 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition duration-200 shadow-md flex-1 sm:flex-initial text-center whitespace-nowrap">
                     <i class="fa-solid fa-plus mr-1"></i>Nhập Kho
                 </button>
-                <button id="btnOpenSystemInbound" onclick="openModal('systemCsvModal')" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md">
-                    <i class="fa-solid fa-file-import mr-1"></i>Nhập File Hệ Thống
+                <button id="btnOpenSystemInbound" onclick="openModal('systemCsvModal')" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-2 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition duration-200 shadow-md flex-1 sm:flex-initial text-center whitespace-nowrap">
+                    <i class="fa-solid fa-file-import mr-1"></i>Nhập File
                 </button>
-                <button id="btnOpenOutbound" onclick="openModal('outboundModal')" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md">
+                <button id="btnOpenOutbound" onclick="openModal('outboundModal')" class="bg-rose-600 hover:bg-rose-700 px-3 py-2 sm:px-4 rounded-lg font-medium text-xs sm:text-sm transition duration-200 shadow-md flex-1 sm:flex-initial text-center whitespace-nowrap">
                     <i class="fa-solid fa-minus mr-1"></i>Xuất Kho
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="p-6 max-w-7xl mx-auto space-y-6">
+    <main class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
 
-        <!-- KPI Summary Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <!-- KPI Summary Cards - Responsive Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <!-- Thẻ 1: Dòng Thực Tế -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Dòng Thực Tế</p>
-                    <h3 id="statTotalRows" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                    <h3 id="statTotalRows" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">0</h3>
                 </div>
                 <div class="bg-blue-50 p-2.5 rounded-lg text-blue-600 text-sm">
                     <i class="fa-solid fa-list-check"></i>
@@ -84,7 +90,7 @@
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Lượng Thực Tế</p>
-                    <h3 id="statTotalQuality" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                    <h3 id="statTotalQuality" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">0</h3>
                 </div>
                 <div class="bg-emerald-50 p-2.5 rounded-lg text-emerald-600 text-sm">
                     <i class="fa-solid fa-cubes"></i>
@@ -94,7 +100,7 @@
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Dòng Hệ Thống</p>
-                    <h3 id="statSystemRows" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                    <h3 id="statSystemRows" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">0</h3>
                 </div>
                 <div class="bg-slate-100 p-2.5 rounded-lg text-slate-600 text-sm border border-slate-200">
                     <i class="fa-solid fa-network-wired"></i>
@@ -104,7 +110,7 @@
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Lượng Hệ Thống</p>
-                    <h3 id="statSystemQuality" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                    <h3 id="statSystemQuality" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">0</h3>
                 </div>
                 <div class="bg-indigo-50 p-2.5 rounded-lg text-indigo-600 text-sm border border-indigo-100">
                     <i class="fa-solid fa-server"></i>
@@ -114,7 +120,7 @@
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium font-semibold text-rose-600">Tổng lượng lệch</p>
-                    <h3 id="statTotalVariance" class="text-xl font-bold text-rose-600 mt-1">0</h3>
+                    <h3 id="statTotalVariance" class="text-lg sm:text-xl font-bold text-rose-600 mt-1">0</h3>
                 </div>
                 <div class="bg-rose-50 p-2.5 rounded-lg text-rose-600 text-sm border border-rose-100">
                     <i class="fa-solid fa-scale-unbalanced"></i>
@@ -123,28 +129,28 @@
         </div>
 
         <!-- Khung biểu đồ đứng -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[320px] relative">
-            <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                <span><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>Biểu Đồ Đối Chiếu Thực Tế - Hệ Thống Theo Mã Hàng</span>
-                <button onclick="resetZoomAndPan()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 transition duration-150">
+        <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[320px] relative">
+            <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between text-xs sm:text-sm">
+                <span class="truncate"><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>Biểu Đồ Đối Chiếu Thực Tế - Hệ Thống Theo Mã Hàng</span>
+                <button onclick="resetZoomAndPan()" class="text-[10px] sm:text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 transition duration-150 shrink-0">
                     <i class="fa-solid fa-arrows-rotate mr-1"></i>Reset Khung
                 </button>
             </h4>
             
             <div id="interactiveCard" class="interactive-card flex-1 border border-slate-100 rounded-lg bg-slate-50/50">
-                <div id="zoomPanContent" class="h-full w-full p-2">
+                <div id="zoomPanContent" class="h-full w-full p-1 sm:p-2">
                     <canvas id="comparisonChart"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- BẢNG PHÂN TÍCH PIVOT ĐỐI CHIẾU THỰC TẾ & HỆ THỐNG -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <h4 class="font-bold text-slate-700 mb-3 flex items-center">
+        <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h4 class="font-bold text-slate-700 mb-3 flex items-center text-xs sm:text-sm">
                 <i class="fa-solid fa-arrows-to-dot text-indigo-500 mr-2"></i>Bảng Phân Tích Pivot Đối Chiếu Sản Lượng Theo Mã Hàng (Stock Code)
             </h4>
             <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-[300px]">
-                <table class="w-full text-left border-collapse text-xs">
+                <table class="w-full text-left border-collapse text-xs min-w-[650px]">
                     <thead class="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0 border-b border-slate-200 z-10">
                         <tr>
                             <th class="py-3 px-4">STT</th>
@@ -163,37 +169,37 @@
         </div>
 
         <!-- Smart Filter Panel -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <h4 class="font-bold text-slate-700 mb-4 flex items-center">
+        <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h4 class="font-bold text-slate-700 mb-4 flex items-center text-xs sm:text-sm">
                 <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh toàn diện
             </h4>
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
-                <input type="text" id="smartFilter" placeholder="Tìm kiếm nhanh... Nhập mã hàng (code), vị trí (bin), mã tag (tagid), hoặc kho (wh)..." oninput="applyFilters()" class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm">
+                <input type="text" id="smartFilter" placeholder="Tìm kiếm nhanh... Nhập mã hàng (code), vị trí (bin), mã tag (tagid), hoặc kho (wh)..." oninput="applyFilters()" class="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm shadow-sm">
             </div>
         </div>
 
         <!-- Data Table Section (Bảng tồn kho thực tế) -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
-                <h4 class="font-bold text-slate-700 flex items-center">
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+                <h4 class="font-bold text-slate-700 flex items-center text-xs sm:text-sm">
                     <i class="fa-solid fa-table text-slate-500 mr-2"></i> Danh sách chi tiết tồn kho thực tế
                 </h4>
                 
-                <div class="flex items-center space-x-2">
-                    <button id="btnImportCsv" onclick="openModal('csvImportModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition duration-150 shadow-sm">
-                        <i class="fa-solid fa-file-csv mr-1"></i> Nhập dữ liệu CSV Thực Tế
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <button id="btnImportCsv" onclick="openModal('csvImportModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold transition duration-150 shadow-sm flex-1 sm:flex-initial text-center">
+                        <i class="fa-solid fa-file-csv mr-1"></i> Nhập CSV Thực Tế
                     </button>
-                    <button onclick="exportToExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition duration-150 shadow-sm">
-                        <i class="fa-solid fa-file-excel mr-1"></i> Xuất File Excel (Đa Sheet)
+                    <button onclick="exportToExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold transition duration-150 shadow-sm flex-1 sm:flex-initial text-center">
+                        <i class="fa-solid fa-file-excel mr-1"></i> Xuất Excel (Đa Sheet)
                     </button>
                 </div>
             </div>
             
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse min-w-[850px]">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider">
                             <th class="py-3.5 px-6">ID</th>
@@ -215,16 +221,16 @@
 
         <!-- BẢNG HIỂN THỊ DỮ LIỆU TABLE GHILOG -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
-                <h4 class="font-bold flex items-center text-sm tracking-wide">
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
+                <h4 class="font-bold flex items-center text-xs sm:text-sm tracking-wide">
                     <i class="fa-solid fa-clock-rotate-left text-blue-400 mr-2"></i> NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG (TABLE GHILOG)
                 </h4>
-                <button onclick="fetchLogsFromSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1 border border-slate-700 transition duration-150">
+                <button onclick="fetchLogsFromSupabase()" class="text-[10px] sm:text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg font-semibold flex items-center space-x-1 border border-slate-700 transition duration-150 shrink-0">
                     <i class="fa-solid fa-arrows-rotate"></i> <span>Làm mới log</span>
                 </button>
             </div>
             <div class="overflow-x-auto max-h-[300px]">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse min-w-[1050px]">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                             <th class="py-3 px-4">Log ID</th>
@@ -252,38 +258,38 @@
 
     <!-- Modal Nhập Kho Thực Tế -->
     <div id="inboundModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="bg-emerald-600 px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-box-open mr-2"></i>Nhập Kho Thực Tế</h3>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            <div class="bg-emerald-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base sm:text-lg"><i class="fa-solid fa-box-open mr-2"></i>Nhập Kho Thực Tế</h3>
                 <button onclick="closeModal('inboundModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-6 space-y-4">
+            <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-4 sm:p-6 space-y-4 overflow-y-auto">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-slate-600 mb-1">Tag ID</label>
-                        <input type="text" required id="inboundTagId" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" required id="inboundTagId" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Bin (Vị trí)</label>
-                        <input type="text" required id="inboundBin" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" required id="inboundBin" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Code (Mã hàng)</label>
-                        <input type="text" required id="inboundCode" list="codeSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" required id="inboundCode" list="codeSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                         <datalist id="codeSuggestions"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">WH (Kho)</label>
-                        <input type="text" required id="inboundWH" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" required id="inboundWH" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Quality (Sản lượng)</label>
-                        <input type="number" required id="inboundQuality" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="number" required id="inboundQuality" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                 </div>
-                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('inboundModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">Hủy</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md">Xác Nhận Nhập</button>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
+                    <button type="button" onclick="closeModal('inboundModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm">Hủy</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md text-sm">Xác Nhận Nhập</button>
                 </div>
             </form>
         </div>
@@ -291,28 +297,28 @@
 
     <!-- Modal Nhập File Hệ Thống -->
     <div id="systemCsvModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-file-invoice mr-2"></i>Nhập File Hệ Thống (CSV Nguồn)</h3>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base sm:text-lg"><i class="fa-solid fa-file-invoice mr-2"></i>Nhập File Hệ Thống (CSV Nguồn)</h3>
                 <button onclick="closeModal('systemCsvModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
                 <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200 leading-relaxed">
                     <span class="font-bold text-slate-700 block mb-1">Cấu trúc file nguồn hệ thống nhận diện tự động:</span>
-                    <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">Stock Code, Warehouse, CREATEDATE, BATCH, BIN, Qty</code>
+                    <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 break-all block sm:inline">Stock Code, Warehouse, CREATEDATE, BATCH, BIN, Qty</code>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Dán nội dung văn bản CSV từ Excel:</label>
                     <textarea id="systemCsvTextArea" rows="6" placeholder="Stock Code,Warehouse,CREATEDATE,BATCH,BIN,Qty&#10;1256810001,01,6/2/2026,900002980666,,500&#10;1256810001,01,12/31/2025,900002880622,01,700" class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
                 </div>
-                <div class="border-t border-slate-100 pt-4 flex justify-between items-center">
+                <div class="border-t border-slate-100 pt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shrink-0">
                     <div class="relative">
                         <input type="file" id="systemCsvFileInput" accept=".csv" onchange="handleSystemCSVFile(event)" class="hidden">
-                        <button type="button" onclick="document.getElementById('systemCsvFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg font-semibold border border-slate-300">
+                        <button type="button" onclick="document.getElementById('systemCsvFileInput').click()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg font-semibold border border-slate-300">
                             <i class="fa-solid fa-file-arrow-up mr-1"></i>Chọn tệp từ máy tính (.csv)
                         </button>
                     </div>
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 justify-end">
                         <button type="button" onclick="closeModal('systemCsvModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Hủy</button>
                         <button type="button" onclick="processSystemCSVImport()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-md">Đồng bộ File Nguồn</button>
                     </div>
@@ -323,15 +329,15 @@
 
     <!-- Modal Xuất Kho -->
     <div id="outboundModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="bg-rose-600 px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-truck-ramp-box mr-2"></i>Xuất Kho Nâng Cao</h3>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            <div class="bg-rose-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base sm:text-lg"><i class="fa-solid fa-truck-ramp-box mr-2"></i>Xuất Kho Nâng Cao</h3>
                 <button onclick="closeModal('outboundModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="outboundForm" onsubmit="handleOutboundSubmit(event)" class="p-6 space-y-4">
+            <form id="outboundForm" onsubmit="handleOutboundSubmit(event)" class="p-4 sm:p-6 space-y-4 overflow-y-auto">
                 <div>
                     <label class="block text-sm font-medium text-slate-600 mb-1">Chế độ xuất (Mode)</label>
-                    <select id="outboundMode" onchange="toggleOutboundModeField()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <select id="outboundMode" onchange="toggleOutboundModeField()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
                         <option value="WO" selected>Xuất theo lệnh sản xuất (WO)</option>
                         <option value="YEU_CAU">Xuất phát theo phiếu yêu cầu</option>
                         <option value="TIEU_HAO">Xuất phát vật liệu tiêu hao</option>
@@ -340,25 +346,25 @@
 
                 <div id="outboundWoField">
                     <label class="block text-sm font-medium text-slate-600 mb-1">Nhập Số Lệnh WO</label>
-                    <input type="text" id="outboundWoValue" placeholder="Nhập mã lệnh sản xuất..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <input type="text" id="outboundWoValue" placeholder="Nhập mã lệnh sản xuất..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-600 mb-1">Quét hoặc Nhập Tag ID</label>
                     <div class="relative">
-                        <input type="text" required id="outboundTagId" placeholder="VD: 900002950002" class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <input type="text" required id="outboundTagId" placeholder="VD: 900002950002" class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i class="fa-solid fa-barcode"></i>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Số lượng xuất bớt (Để trống hoặc điền 0 nếu xuất hết)</label>
-                    <input type="number" id="outboundQty" placeholder="Giữ nguyên xuất 1 phần & xuất hết..." class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Số lượng xuất bớt (Để trống nếu xuất hết)</label>
+                    <input type="number" id="outboundQty" placeholder="Giữ nguyên xuất 1 phần & xuất hết..." class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
                 </div>
-                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('outboundModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">Hủy</button>
-                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium shadow-md">Xác Nhận Xuất</button>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
+                    <button type="button" onclick="closeModal('outboundModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm">Hủy</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium shadow-md text-sm">Xác Nhận Xuất</button>
                 </div>
             </form>
         </div>
@@ -366,29 +372,29 @@
 
     <!-- Modal Nhập Nhanh CSV Thực Tế -->
     <div id="csvImportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-file-import mr-2"></i>Nhập Nhanh Dữ Liệu bằng CSV</h3>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base sm:text-lg"><i class="fa-solid fa-file-import mr-2"></i>Nhập Nhanh Dữ Liệu bằng CSV</h3>
                 <button onclick="closeModal('csvImportModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto">
                 <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200 leading-relaxed">
                     <span class="font-bold text-slate-700 block mb-1">Định dạng mẫu dòng tiêu đề CSV bắt buộc:</span>
-                    <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">tag_id,bin,code,wh,quality</code>
+                    <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 break-all block sm:inline">tag_id,bin,code,wh,quality</code>
                     <p class="mt-2 text-rose-500 font-semibold">* Lưu ý: Hệ thống sẽ phân tách tự động bằng dấu phẩy (,).</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Dán nội dung văn bản CSV trực tiếp:</label>
                     <textarea id="csvTextArea" rows="6" placeholder="tag_id,bin,code,wh,quality&#10;900002950009,100602,3430490101,61,500&#10;900002950010,100605,3430490102,61,250" class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
                 </div>
-                <div class="border-t border-slate-100 pt-4 flex justify-between items-center">
+                <div class="border-t border-slate-100 pt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 shrink-0">
                     <div class="relative">
                         <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)" class="hidden">
-                        <button type="button" onclick="document.getElementById('csvFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg font-semibold border border-slate-300">
+                        <button type="button" onclick="document.getElementById('csvFileInput').click()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg font-semibold border border-slate-300">
                             <i class="fa-solid fa-file-arrow-up mr-1"></i>Chọn từ máy tính (.csv)
                         </button>
                     </div>
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 justify-end">
                         <button type="button" onclick="closeModal('csvImportModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Hủy</button>
                         <button type="button" onclick="processCSVImport()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-md">Thực Thi Nhập</button>
                     </div>
@@ -592,11 +598,11 @@
 
             // Cập nhật linh hoạt màu sắc hiển thị dựa trên giá trị âm/dương
             if (totalVarianceQty < 0) {
-                statTotalVariance.className = "text-xl font-bold text-rose-600 mt-1";
+                statTotalVariance.className = "text-lg sm:text-xl font-bold text-rose-600 mt-1";
             } else if (totalVarianceQty > 0) {
-                statTotalVariance.className = "text-xl font-bold text-emerald-600 mt-1";
+                statTotalVariance.className = "text-lg sm:text-xl font-bold text-emerald-600 mt-1";
             } else {
-                statTotalVariance.className = "text-xl font-bold text-slate-600 mt-1";
+                statTotalVariance.className = "text-lg sm:text-xl font-bold text-slate-600 mt-1";
             }
         }
 
@@ -814,7 +820,7 @@
             }
         }
 
-        // --- ĐỒNG BỘ BỘ LỌC THÔNG MINH CHO CẢ 2 BẢNG THỰC TẾ & HỆ THỐNG ---
+        // --- ĐỒNG BỘ BỘ LỌC THÔNG MINH ---
         function applyFilters() {
             const query = document.getElementById('smartFilter').value.toLowerCase().trim();
 
