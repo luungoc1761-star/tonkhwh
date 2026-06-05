@@ -10,25 +10,21 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Hammer.js (Yêu cầu bắt buộc để hỗ trợ nhận diện cử chỉ cho plugin zoom) -->
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <!-- Chart.js Zoom Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase JS Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* Thẻ CSS Phóng to thu nhỏ & Pan chuột */
+        /* Thẻ CSS Khung chứa biểu đồ */
         .interactive-card {
             position: relative;
             overflow: hidden;
-            cursor: grab;
             user-select: none;
-        }
-        .interactive-card:active {
-            cursor: grabbing;
-        }
-        .zoom-pan-content {
-            transform-origin: 0 0;
-            transition: transform 0.05s ease-out;
         }
     </style>
 </head>
@@ -67,7 +63,7 @@
 
     <main class="p-6 max-w-7xl mx-auto space-y-6">
 
-        <!-- KPI Summary Cards (Cập nhật đồng bộ theo Thực tế & Hệ thống) -->
+        <!-- KPI Summary Cards -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <!-- Thẻ 1: Dòng Thực Tế -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
@@ -89,7 +85,7 @@
                     <i class="fa-solid fa-cubes"></i>
                 </div>
             </div>
-            <!-- Thẻ 3: Dòng Hệ Thống (Nâng cấp) -->
+            <!-- Thẻ 3: Dòng Hệ Thống -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Dòng Hệ Thống</p>
@@ -99,7 +95,7 @@
                     <i class="fa-solid fa-network-wired"></i>
                 </div>
             </div>
-            <!-- Thẻ 4: Lượng Hệ Thống (Nâng cấp) -->
+            <!-- Thẻ 4: Lượng Hệ Thống -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Lượng Hệ Thống</p>
@@ -109,7 +105,7 @@
                     <i class="fa-solid fa-server"></i>
                 </div>
             </div>
-            <!-- Thẻ 5: Tổng lượng chênh lệch -->
+            <!-- Thẻ 5: Tổng lượng chênh lệch (Thực tế - Hệ thống) -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-500 font-medium font-semibold text-rose-600">Tổng lượng lệch</p>
@@ -121,7 +117,7 @@
             </div>
         </div>
 
-        <!-- Khung biểu đồ đứng (Không linetrend, màu sắc đã sửa Thực tế = Xanh, Hệ thống = Đỏ) -->
+        <!-- Khung biểu đồ đứng -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[320px] relative">
             <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between">
                 <span><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>Biểu Đồ Đối Chiếu Thực Tế - Hệ Thống Theo Mã Hàng</span>
@@ -131,7 +127,7 @@
             </h4>
             
             <div id="interactiveCard" class="interactive-card flex-1 border border-slate-100 rounded-lg bg-slate-50/50">
-                <div id="zoomPanContent" class="zoom-pan-content h-full w-full p-2">
+                <div id="zoomPanContent" class="h-full w-full p-2">
                     <canvas id="comparisonChart"></canvas>
                 </div>
             </div>
@@ -414,52 +410,11 @@
         let editingRowId = null;  
         let mainChart = null;
 
-        // --- Thuật toán Zoom & Panning ---
-        const interactiveCard = document.getElementById('interactiveCard');
-        const zoomPanContent = document.getElementById('zoomPanContent');
-        let scale = 1;
-        let isDragging = false;
-        let startX, startY, translateX = 0, translateY = 0;
-
-        interactiveCard.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const zoomFactor = 0.08;
-            if (e.deltaY < 0) {
-                scale = Math.min(scale + zoomFactor, 3.5); 
-            } else {
-                scale = Math.max(scale - zoomFactor, 0.5); 
-            }
-            applyZoomPan();
-        });
-
-        interactiveCard.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            interactiveCard.style.cursor = 'grabbing';
-        });
-
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            interactiveCard.style.cursor = 'grab';
-        });
-
-        interactiveCard.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            applyZoomPan();
-        });
-
-        function applyZoomPan() {
-            zoomPanContent.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-
+        // --- HÀM KHÔI PHỤC ZOOM CHO BIỂU ĐỒ ---
         function resetZoomAndPan() {
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            applyZoomPan();
+            if (mainChart) {
+                mainChart.resetZoom();
+            }
         }
 
         // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
@@ -486,7 +441,9 @@
                     .from('v_inventory_comparison')
                     .select('*');
                 if (compErr) throw compErr;
-                comparisonData = compData || [];
+
+                // LỌC CHỈ LẤY CÁC DÒNG CÓ THỰC TẾ (actual_qty > 0) ĐỂ SO SÁNH VỚI HỆ THỐNG
+                comparisonData = (compData || []).filter(item => Number(item.actual_qty || 0) > 0);
 
                 // Khởi tạo trạng thái đồng bộ ban đầu
                 filteredData = [...inventoryData];
@@ -606,7 +563,7 @@
             }
         }
 
-        // --- NÂNG CẤP: CẬP NHẬT 5 THẺ KPI SO SÁNH ĐỒNG BỘ [2] ---
+        // --- CẬP NHẬT 5 THÈ KPI SO SÁNH ĐỒNG BỘ [2] ---
         function updateStats() {
             // Thẻ 1: Dòng Thực Tế
             document.getElementById('statTotalRows').innerText = filteredData.length;
@@ -623,17 +580,22 @@
             const totalSystemQuality = filteredComparisonData.reduce((acc, curr) => acc + Number(curr.system_qty || 0), 0);
             document.getElementById('statSystemQuality').innerText = totalSystemQuality.toLocaleString('vi-VN');
 
-            // Thẻ 5: Tổng lượng chênh lệch (Cộng dồn giá trị tuyệt đối từng mã) [2]
-            let totalVarianceQty = 0;    
-            filteredComparisonData.forEach(item => {
-                const actVal = Number(item.actual_qty || 0);
-                const sysVal = Number(item.system_qty || 0);
-                totalVarianceQty += Math.abs(actVal - sysVal);
-            });
-            document.getElementById('statTotalVariance').innerText = totalVarianceQty.toLocaleString('vi-VN');
+            // Thẻ 5: Tổng lượng chênh lệch (Thực tế trừ Hệ thống) [2]
+            const totalVarianceQty = totalQuality - totalSystemQuality;
+            const statTotalVariance = document.getElementById('statTotalVariance');
+            statTotalVariance.innerText = totalVarianceQty.toLocaleString('vi-VN');
+
+            // Cập nhật linh hoạt màu sắc hiển thị dựa trên giá trị âm/dương
+            if (totalVarianceQty < 0) {
+                statTotalVariance.className = "text-xl font-bold text-rose-600 mt-1";
+            } else if (totalVarianceQty > 0) {
+                statTotalVariance.className = "text-xl font-bold text-emerald-600 mt-1";
+            } else {
+                statTotalVariance.className = "text-xl font-bold text-slate-600 mt-1";
+            }
         }
 
-        // --- NÂNG CẤP: KHỞI TẠO BIỂU ĐỒ ĐỐI CHIẾU 2 CỘT ĐỘNG (XANH THỰC TẾ, ĐỎ HỆ THỐNG - BỎ LINETREND) ---
+        // --- KHỞI TẠO BIỂU ĐỒ NATIVE SỬ DỤNG PLUGIN ZOOM TRÊN TRỤC X ---
         function initChart() {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
             mainChart = new Chart(ctx, {
@@ -644,7 +606,7 @@
                         {
                             label: 'Thực Tế (Actual)',
                             data: [],
-                            backgroundColor: '#10b981', // THỰC TẾ MÀU XANH LÁ (Emerald 500)
+                            backgroundColor: '#10b981', // THỰC TẾ MÀU XANH LÁ
                             borderColor: '#059669',
                             borderWidth: 1,
                             borderRadius: 4
@@ -652,7 +614,7 @@
                         {
                             label: 'Hệ Thống (System)',
                             data: [],
-                            backgroundColor: '#ef4444', // HỆ THỐNG MÀU ĐỎ (Red 500)
+                            backgroundColor: '#ef4444', // HỆ THỐNG MÀU ĐỎ
                             borderColor: '#dc2626',
                             borderWidth: 1,
                             borderRadius: 4
@@ -667,9 +629,31 @@
                         easing: 'easeOutQuart'
                     },
                     plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 9 } } }
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 9 } } },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x', // Chỉ kéo di chuyển sang hai bên theo trục X
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true, // Cuộn chuột trực tiếp trên biểu đồ để thu phóng cột
+                                },
+                                pinch: {
+                                    enabled: true // Hỗ trợ nhúm ngón tay zoom trên điện thoại
+                                },
+                                mode: 'x', // Chỉ thu nhỏ phóng to chiều rộng các cột (Trục X) để chỉ số không bị mờ
+                            }
+                        }
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 90,
+                                minRotation: 45,
+                                font: { size: 9 }
+                            }
+                        },
                         y: {
                             type: 'linear',
                             display: true,
@@ -681,7 +665,7 @@
             });
         }
 
-        // --- NÂNG CẤP: CẬP NHẬT BIỂU ĐỒ ĐỒNG BỘ THEO DỮ LIỆU VIEW PHÂN TÍCH ---
+        // --- CẬP NHẬT BIỂU ĐỒ ĐỒNG BỘ THEO DỮ LIỆU VIEW PHÂN TÍCH ---
         function updateChart() {
             if (!mainChart) return;
 
@@ -695,7 +679,7 @@
             mainChart.update(); 
         }
 
-        // --- NÂNG CẤP: ĐỒNG BỘ BẢNG PIVOT ĐỐI CHIẾU LẤY DỮ LIỆU TỪ VIEW SUPABASE ---
+        // --- ĐỒNG BỘ BẢNG PIVOT ĐỐI CHIẾU LẤY DỮ LIỆU TỪ VIEW SUPABASE ---
         function updatePivotTable() {
             const pivotBody = document.getElementById('pivotTableBody');
             pivotBody.innerHTML = '';
@@ -838,7 +822,7 @@
                 return matchCode || matchBin || matchWH || matchTag;
             });
 
-            // Lọc bảng phân tích đối chiếu chênh lệch đồng bộ lấy từ View [2]
+            // Lọc bảng phân tích đối chiếu chênh lệch đồng bộ lấy từ nguồn đã lọc trước đó (actual_qty > 0)
             filteredComparisonData = comparisonData.filter(item => {
                 return (item.code || '').toLowerCase().includes(query);
             });
@@ -1087,7 +1071,7 @@
             }
         }
 
-        // --- NHẬP FILE HỆ THỐNG VỚI PHƯƠNG PHÁP LẤY DỮ LIỆU CUỐI CÙNG (DEDUPLICATION & AUTO DELIMITER DETECTION) ---
+        // --- NHẬP FILE HỆ THỐNG VỚI PHƯƠNG PHÁP LẤY DỮ LIỆU CUỐI CÙNG ---
         function handleSystemCSVFile(event) {
             const file = event.target.files[0];
             if (!file) return;
