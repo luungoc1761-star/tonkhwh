@@ -79,7 +79,7 @@
                 </div>
             </div>
 
-            <!-- BẢNG PHÂN TÍCH PIVOT (Thay thế cho biểu đồ cũ, tự động liên kết với thanh bộ lọc) -->
+            <!-- BẢNG PHÂN TÍCH PIVOT -->
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2 flex flex-col h-[282px]">
                 <h4 class="font-bold text-slate-700 mb-3 flex items-center justify-between">
                     <span><i class="fa-solid fa-arrows-to-dot text-indigo-500 mr-2"></i>Bảng Phân Tích Pivot (Tổng sản lượng theo Code)</span>
@@ -102,7 +102,7 @@
             </div>
         </div>
 
-        <!-- Smart Filter Panel (Gộp 4 thanh bộ lọc cũ thành 1) -->
+        <!-- Smart Filter Panel -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <h4 class="font-bold text-slate-700 mb-4 flex items-center">
                 <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh toàn diện
@@ -122,7 +122,6 @@
                     <i class="fa-solid fa-table text-slate-500 mr-2"></i> Danh sách chi tiết tồn kho
                 </h4>
                 
-                <!-- Bổ sung nút Export Excel và nút Import CSV tiện ích -->
                 <div class="flex items-center space-x-2">
                     <button id="btnImportCsv" onclick="openModal('csvImportModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition duration-150 shadow-sm">
                         <i class="fa-solid fa-file-csv mr-1"></i> Nhập dữ liệu CSV
@@ -176,7 +175,6 @@
                         <input type="text" required id="inboundBin" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
-                        <!-- Nâng cấp Datalist: Gợi ý các Mã Code đã có sẵn trong cơ sở dữ liệu -->
                         <label class="block text-sm font-medium text-slate-600 mb-1">Code (Mã hàng)</label>
                         <input type="text" required id="inboundCode" list="codeSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         <datalist id="codeSuggestions"></datalist>
@@ -198,7 +196,7 @@
         </div>
     </div>
 
-    <!-- Modal Xuất Kho (Nâng cấp thêm 3 Mode xuất: WO, Yêu Cầu, Vật Liệu Tiêu Hao) -->
+    <!-- Modal Xuất Kho -->
     <div id="outboundModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
             <div class="bg-rose-600 px-6 py-4 text-white flex justify-between items-center">
@@ -206,7 +204,6 @@
                 <button onclick="closeModal('outboundModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="outboundForm" onsubmit="handleOutboundSubmit(event)" class="p-6 space-y-4">
-                <!-- Chọn Mode Xuất Kho -->
                 <div>
                     <label class="block text-sm font-medium text-slate-600 mb-1">Chế độ xuất (Mode)</label>
                     <select id="outboundMode" onchange="toggleOutboundModeField()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
@@ -216,7 +213,6 @@
                     </select>
                 </div>
 
-                <!-- Trường nhập lệnh WO bổ sung (Chỉ hiện khi chọn mode WO) -->
                 <div id="outboundWoField">
                     <label class="block text-sm font-medium text-slate-600 mb-1">Nhập Số Lệnh WO</label>
                     <input type="text" id="outboundWoValue" placeholder="Nhập mã lệnh sản xuất..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
@@ -243,7 +239,7 @@
         </div>
     </div>
 
-    <!-- Modal Nhập Nhanh Dữ Liệu bằng CSV (giống cấu hình Supabase CSV Import) -->
+    <!-- Modal Nhập Nhanh CSV -->
     <div id="csvImportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
             <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center">
@@ -285,8 +281,9 @@
         
         let inventoryData = [];
         let filteredData = [];
-        let currentRole = "Admin"; // Vai trò mặc định: Admin
-        let editingRowId = null;  // Quản lý trạng thái chỉnh sửa theo TỪNG DÒNG độc lập
+        let currentRole = "Admin"; 
+        let isEditMode = false;     // Khai báo lại biến isEditMode bị thiếu
+        let editingRowId = null;  
 
         // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
         async function fetchFromSupabase() {
@@ -323,9 +320,9 @@
         function handleUserChange() {
             currentRole = document.getElementById('userSelector').value;
             applyRolePermissions();
-            // Nếu đổi role trong lúc đang sửa dòng thì hủy trạng thái sửa
             if (editingRowId !== null) {
                 editingRowId = null;
+                isEditMode = false;
                 renderTable();
             }
         }
@@ -334,25 +331,21 @@
             const btnOpenInbound = document.getElementById('btnOpenInbound');
             const btnOpenOutbound = document.getElementById('btnOpenOutbound');
             const btnImportCsv = document.getElementById('btnImportCsv');
-            const btnToggleEdit = document.getElementById('btnToggleEdit');
             
             if (currentRole === "Admin") {
                 btnOpenInbound.classList.remove('hidden');
                 btnOpenOutbound.classList.remove('hidden');
                 btnImportCsv.classList.remove('hidden');
-                btnToggleEdit.classList.remove('hidden');
                 document.getElementById('colActionHeader').style.display = "";
             } else if (currentRole === "Operator") {
                 btnOpenInbound.classList.remove('hidden');
                 btnOpenOutbound.classList.remove('hidden');
                 btnImportCsv.classList.add('hidden');
-                btnToggleEdit.classList.add('hidden');
                 document.getElementById('colActionHeader').style.display = "none";
-            } else { // Viewer chỉ có thể xem
+            } else { 
                 btnOpenInbound.classList.add('hidden');
                 btnOpenOutbound.classList.add('hidden');
                 btnImportCsv.classList.add('hidden');
-                btnToggleEdit.classList.add('hidden');
                 document.getElementById('colActionHeader').style.display = "none";
             }
             renderTable();
@@ -389,7 +382,7 @@
             document.getElementById('statUniqueCodes').innerText = uniqueCodes;
         }
 
-        // --- 6. CẬP NHẬT BẢNG PIVOT (Tổng lượng hàng gom theo từng Code) ---
+        // --- 6. CẬP NHẬT BẢNG PIVOT ---
         function updatePivotTable() {
             const pivotBody = document.getElementById('pivotTableBody');
             pivotBody.innerHTML = '';
@@ -439,11 +432,9 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition duration-150";
 
-                // Chỉ hiển thị cột "Hành động" khi quyền của người dùng là Admin
                 const showActionCell = (currentRole === "Admin");
 
                 if (isEditMode && editingRowId === item.id) {
-                    // Chế độ chỉnh sửa dòng độc lập đang chọn
                     tr.innerHTML = `
                         <td class="py-3 px-6 text-slate-400 font-semibold font-mono">${item.id}</td>
                         <td class="py-3 px-6 text-slate-500">${dateFormatted}</td>
@@ -458,7 +449,6 @@
                         </td>
                     `;
                 } else {
-                    // Trạng thái hiển thị thông thường
                     tr.innerHTML = `
                         <td class="py-3.5 px-6 font-semibold font-mono text-slate-500">${item.id}</td>
                         <td class="py-3.5 px-6 text-slate-500">${dateFormatted}</td>
@@ -478,7 +468,7 @@
             });
         }
 
-        // --- 9. BỘ LỌC THÔNG MINH GỘP CHUNG (CODE, BIN, TAGID, WH) ---
+        // --- 9. BỘ LỌC THÔNG MINH GỘP CHUNG ---
         function applyFilters() {
             const query = document.getElementById('smartFilter').value.toLowerCase().trim();
 
@@ -495,7 +485,7 @@
             updatePivotTable();
         }
 
-        // --- 10. ĐIỀU KHIỂN CHỈNH SỬA TỐI ƯU THEO TỪNG DÒNG ---
+        // --- 10. ĐIỀU KHIỂN CHỈNH SỬA THEO TỪNG DÒNG ---
         function startRowEdit(id) {
             isEditMode = true;
             editingRowId = id;
@@ -516,7 +506,6 @@
             const quality = Number(document.getElementById('edit_quality').value);
 
             try {
-                // Đẩy thông tin cập nhật lên Supabase đối với duy nhất dòng được chọn
                 const { error } = await supabaseClient
                     .from('inventory')
                     .update({ tag_id, bin, code, wh, quality })
@@ -524,13 +513,12 @@
                 
                 if (error) throw error;
 
-                // Nhật ký ghi log lưu vết sự kiện sửa đổi
-                await logActivity('CHINH_SUA', tag_id, code, bin, wh, quality, `Sửa trực tiếp thông số bản ghi có ID: ${id}`);
+                await logActivity('CHINH_SUA', tag_id, code, bin, wh, quality, `Sửa trực tiếp bản ghi ID: ${id}`);
 
                 isEditMode = false;
                 editingRowId = null;
                 alert('Đã cập nhật dòng dữ liệu thành công!');
-                await fetchFromSupabase(); // Đồng bộ dữ liệu
+                await fetchFromSupabase(); 
             } catch (err) {
                 console.error("Lỗi cập nhật dòng: ", err);
                 alert("Cập nhật dòng thất bại: " + err.message);
@@ -556,7 +544,7 @@
             }, 300);
         }
 
-        // --- 12. XỬ LÝ NHẬP KHO LÊN SUPABASE (INSERT) & GHI LOG ---
+        // --- 12. XỬ LÝ NHẬP KHO LÊN SUPABASE ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
             const tagId = document.getElementById('inboundTagId').value;
@@ -572,12 +560,11 @@
 
                 if (error) throw error;
 
-                // Ghi nhận hành động vào nhật ký hệ thống
-                await logActivity('NHAP_KHO', tagId, code, bin, wh, quality, 'Nhập dữ liệu kho mới thành công');
+                await logActivity('NHAP_KHO', tagId, code, bin, wh, quality, 'Nhập dữ liệu kho mới');
 
                 closeModal('inboundModal');
                 document.getElementById('inboundForm').reset();
-                alert('Đã thêm dữ liệu nhập kho vào cơ sở dữ liệu!');
+                alert('Đã thêm dữ liệu nhập kho!');
                 await fetchFromSupabase(); 
             } catch (err) {
                 console.error("Lỗi khi thêm mới dữ liệu: ", err);
@@ -585,7 +572,7 @@
             }
         }
 
-        // --- 13. NÂNG CẤP CHẾ ĐỘ XUẤT KHO NÂNG CAO (WO, YÊU CẦU, TIÊU HAO) ---
+        // --- 13. CHẾ ĐỘ XUẤT KHO NÂNG CAO ---
         function toggleOutboundModeField() {
             const mode = document.getElementById('outboundMode').value;
             const woField = document.getElementById('outboundWoField');
@@ -605,7 +592,6 @@
             const qtyToReduce = qtyStr ? Number(qtyStr) : null;
 
             try {
-                // Kiểm tra sự tồn tại của thẻ trong kho dữ liệu Supabase
                 const { data, error: fetchError } = await supabaseClient
                     .from('inventory')
                     .select('*')
@@ -624,7 +610,6 @@
                 let logActionType = '';
                 let logDetails = '';
 
-                // Xác định thông tin mô tả chi tiết cho từng loại hình Log ghi nhận
                 if (mode === "WO") {
                     if (!woValue) {
                         alert("Vui lòng điền mã lệnh WO!");
@@ -634,14 +619,13 @@
                     logDetails = `Số WO: ${woValue}`;
                 } else if (mode === "YEU_CAU") {
                     logActionType = 'XUAT_YEU_CAU';
-                    logDetails = 'Hoạt động phát yêu cầu phòng ban sản xuất';
+                    logDetails = 'Hoạt động phát yêu cầu phòng sản xuất';
                 } else {
                     logActionType = 'XUAT_TIEU_HAO';
-                    logDetails = 'Phát xuất vật liệu tiêu hao';
+                    logDetails = 'Phát vật liệu tiêu hao';
                 }
 
                 if (qtyToReduce === null || qtyToReduce >= currentQty) {
-                    // PHƯƠNG PHÁP XUẤT HẾT: Tiến hành xóa hẳn dòng trong bảng
                     const { error: deleteError } = await supabaseClient
                         .from('inventory')
                         .delete()
@@ -649,11 +633,9 @@
                     
                     if (deleteError) throw deleteError;
 
-                    // Ghi Log hệ thống
                     await logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, currentQty, logDetails + ' (Xuất hết)');
                     alert(`Đã xuất toàn bộ mã tag ${tagId} ra khỏi kho.`);
                 } else {
-                    // PHƯƠNG PHÁP XUẤT 1 PHẦN: Giảm số lượng quality
                     const { error: updateError } = await supabaseClient
                         .from('inventory')
                         .update({ quality: currentQty - qtyToReduce })
@@ -661,7 +643,6 @@
 
                     if (updateError) throw updateError;
 
-                    // Ghi Log hệ thống
                     await logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, qtyToReduce, logDetails + ` (Xuất 1 phần - giảm ${qtyToReduce})`);
                     alert(`Đã xuất và trừ đi ${qtyToReduce} sản phẩm thuộc thẻ ${tagId}.`);
                 }
@@ -675,7 +656,7 @@
             }
         }
 
-        // --- 14. THUẬT TOÁN THÊM NHANH BẰNG CSV (PARSING & BULK INSERT) ---
+        // --- 14. THUẬT TOÁN THÊM NHANH BẰNG CSV ---
         function handleCSVFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -700,7 +681,6 @@
                 return;
             }
 
-            // Chuyển hàng tiêu đề để so khớp các cột
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             
             const requiredFields = ['tag_id', 'bin', 'code', 'wh', 'quality'];
@@ -713,7 +693,7 @@
             const payload = [];
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
-                if (values.length !== headers.length) continue; // Bỏ qua dòng lỗi cấu trúc cột
+                if (values.length !== headers.length) continue; 
 
                 const rowObj = {};
                 headers.forEach((header, idx) => {
@@ -735,19 +715,17 @@
             }
 
             try {
-                // Tiến hành bulk insert hàng loạt dòng dữ liệu vào cơ sở dữ liệu Supabase
                 const { error } = await supabaseClient
                     .from('inventory')
                     .insert(payload);
 
                 if (error) throw error;
 
-                // Ghi nhận nhật ký sự kiện log import hàng loạt
                 await logActivity('IMPORT_CSV', `Số dòng: ${payload.length}`, 'NHIỀU_CODE', 'NHIỀU_BIN', 'NHIỀU_WH', 0, `Nhập nhanh hàng loạt từ tệp CSV.`);
 
                 closeModal('csvImportModal');
                 document.getElementById('csvTextArea').value = '';
-                alert(`Nhập thành công ${payload.length} dòng dữ liệu từ CSV vào hệ thống!`);
+                alert(`Nhập thành công ${payload.length} dòng dữ liệu từ CSV!`);
                 await fetchFromSupabase();
             } catch (err) {
                 console.error("Lỗi import CSV: ", err);
@@ -755,14 +733,13 @@
             }
         }
 
-        // --- 15. THUẬT TOÁN XUẤT FILE EXCEL.XLSX ĐÚNG ĐỊNH DẠNG DATABASE ---
+        // --- 15. THUẬT TOÁN XUẤT FILE EXCEL.XLSX ---
         function exportToExcel() {
             if (filteredData.length === 0) {
                 alert("Không có dữ liệu hiện hành trong bảng lọc để xuất!");
                 return;
             }
 
-            // Bản đồ hóa các bản ghi theo đúng định dạng cột database
             const excelRows = filteredData.map(item => ({
                 id: item.id,
                 created_at: item.created_at,
@@ -773,12 +750,10 @@
                 quality: Number(item.quality || 0)
             }));
 
-            // Sử dụng thư viện SheetJS thiết lập dữ liệu
             const worksheet = XLSX.utils.json_to_sheet(excelRows);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "InventoryData");
 
-            // Tạo file thực tế tải về máy người dùng
             const dateStr = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(workbook, `BaoCao_Tonton_${dateStr}.xlsx`);
         }
