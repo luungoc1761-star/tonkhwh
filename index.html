@@ -214,52 +214,46 @@
 
     <!-- Script điều khiển -->
     <script>
-        // --- 1. CONFIG SUPABASE (Thay đổi thông tin nếu bạn sử dụng database trực tiếp) ---
-        // const SUPABASE_URL = 'https://ayxhdqaendspvdxibayh.supabase.co';
-        // const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eGhkcWFlbmRzcHZkeGliYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDAzMDQsImV4cCI6MjA5NTUxNjMwNH0.MOmERW-oVJitj6fAB85439_nxqeyYMQhQ5rYr8TF-Fc';
-        // const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- 1. KẾT NỐI SUPABASE CHÍNH THỨC ---
+        const SUPABASE_URL = 'https://ayxhdqaendspvdxibayh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eGhkcWFlbmRzcHZkeGliYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDAzMDQsImV4cCI6MjA5NTUxNjMwNH0.MOmERW-oVJitj6fAB85439_nxqeyYMQhQ5rYr8TF-Fc';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // --- 2. DỮ LIỆU KHỞI TẠO (Dựa theo ảnh của bạn cung cấp) ---
-        let inventoryData = [
-            { id: 3529, created_at: "2026-06-05T03:54:54.164Z", tag_id: "900002950002", bin: "100602", code: "3430490101", wh: "61", quality: 100 },
-            { id: 3530, created_at: "2026-06-05T03:54:54.164Z", tag_id: "900002950003", bin: "100602", code: "3430490101", wh: "61", quality: 418 },
-            { id: 3531, created_at: "2026-06-05T03:54:54.164Z", tag_id: "900002971930", bin: "100601", code: "3430490101", wh: "61", quality: 8200 },
-            { id: 3532, created_at: "2026-06-05T03:55:00.000Z", tag_id: "900002971931", bin: "100603", code: "3430490102", wh: "61", quality: 1500 }
-        ];
-
-        let filteredData = [...inventoryData];
+        let inventoryData = [];
+        let filteredData = [];
         let isEditMode = false;
         let mainChart = null;
 
-        // --- 3. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE (BỎ COMMENT PHẦN NÀY KHI SỬ DỤNG DỮ LIỆU THẬT) ---
-        /*
+        // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
         async function fetchFromSupabase() {
-            const { data, error } = await supabaseClient
-                .from('inventory') // Tên bảng của bạn
-                .select('*')
-                .order('id', { ascending: false });
+            try {
+                const { data, error } = await supabaseClient
+                    .from('inventory') 
+                    .select('*')
+                    .order('id', { ascending: false });
+                    
+                if (error) {
+                    throw error;
+                }
                 
-            if (error) {
-                console.error("Lỗi lấy dữ liệu: ", error);
-            } else {
-                inventoryData = data;
+                inventoryData = data || [];
                 filteredData = [...inventoryData];
                 renderTable();
                 updateStats();
                 updateChart();
+            } catch (err) {
+                console.error("Lỗi đồng bộ dữ liệu Supabase: ", err);
+                alert("Không thể tải dữ liệu từ cơ sở dữ liệu: " + err.message);
             }
         }
-        */
 
         // --- Khởi tạo ứng dụng ---
-        window.addEventListener('DOMContentLoaded', () => {
-            // fetchFromSupabase(); // Gọi hàm này khi đã cấu hình xong Supabase thực tế
-            renderTable();
-            updateStats();
+        window.addEventListener('DOMContentLoaded', async () => {
             initChart();
+            await fetchFromSupabase(); // Gọi lấy dữ liệu thực tế ngay khi trang web được tải
         });
 
-        // --- 4. CẬP NHẬT STATS ---
+        // --- 3. CẬP NHẬT STATS ---
         function updateStats() {
             document.getElementById('statTotalRows').innerText = filteredData.length;
             const totalQuality = filteredData.reduce((acc, curr) => acc + Number(curr.quality || 0), 0);
@@ -269,23 +263,16 @@
             document.getElementById('statUniqueCodes').innerText = uniqueCodes;
         }
 
-        // --- 5. VẼ & CẬP NHẬT BIỂU ĐỒ (Chart.js) ---
+        // --- 4. VẼ & CẬP NHẬT BIỂU ĐỒ (Chart.js) ---
         function initChart() {
             const ctx = document.getElementById('qualityChart').getContext('2d');
-            
-            // Nhóm sản lượng theo Mã hàng (Code)
-            const grouped = {};
-            filteredData.forEach(item => {
-                grouped[item.code] = (grouped[item.code] || 0) + Number(item.quality || 0);
-            });
-
             mainChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(grouped),
+                    labels: [],
                     datasets: [{
                         label: 'Sản lượng (Quality)',
-                        data: Object.values(grouped),
+                        data: [],
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgb(59, 130, 246)',
                         borderWidth: 1,
@@ -322,7 +309,7 @@
             mainChart.update();
         }
 
-        // --- 6. HIỂN THỊ BẢNG DỮ LIỆU ---
+        // --- 5. HIỂN THỊ BẢNG DỮ LIỆU ---
         function renderTable() {
             const tbody = document.getElementById('inventoryTableBody');
             tbody.innerHTML = '';
@@ -333,33 +320,31 @@
                 tr.className = "hover:bg-slate-50 transition duration-150";
 
                 if (isEditMode) {
-                    // Trạng thái cho phép sửa hàng loạt trực tiếp trên ô
                     tr.innerHTML = `
                         <td class="py-3 px-6 text-slate-400 font-semibold font-mono">${item.id}</td>
                         <td class="py-3 px-6 text-slate-500">${dateFormatted}</td>
-                        <td class="py-3 px-6"><input type="text" value="${item.tag_id}" data-id="${item.id}" data-field="tag_id" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.bin}" data-id="${item.id}" data-field="bin" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.code}" data-id="${item.id}" data-field="code" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.wh}" data-id="${item.id}" data-field="wh" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="number" value="${item.quality}" data-id="${item.id}" data-field="quality" class="w-full px-2 py-1 border border-blue-400 rounded text-right focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="text" value="${item.tag_id || ''}" data-id="${item.id}" data-field="tag_id" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="text" value="${item.bin || ''}" data-id="${item.id}" data-field="bin" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="text" value="${item.code || ''}" data-id="${item.id}" data-field="code" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="text" value="${item.wh || ''}" data-id="${item.id}" data-field="wh" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="number" value="${item.quality || 0}" data-id="${item.id}" data-field="quality" class="w-full px-2 py-1 border border-blue-400 rounded text-right focus:outline-none"></td>
                     `;
                 } else {
-                    // Trạng thái hiển thị thông thường
                     tr.innerHTML = `
                         <td class="py-3.5 px-6 font-semibold font-mono text-slate-500">${item.id}</td>
                         <td class="py-3.5 px-6 text-slate-500">${dateFormatted}</td>
-                        <td class="py-3.5 px-6 font-medium text-slate-900">${item.tag_id}</td>
-                        <td class="py-3.5 px-6"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-indigo-100">${item.bin}</span></td>
-                        <td class="py-3.5 px-6 font-medium text-slate-700">${item.code}</td>
-                        <td class="py-3.5 px-6 text-slate-600">${item.wh}</td>
-                        <td class="py-3.5 px-6 text-right font-bold text-slate-900">${Number(item.quality).toLocaleString('vi-VN')}</td>
+                        <td class="py-3.5 px-6 font-medium text-slate-900">${item.tag_id || ''}</td>
+                        <td class="py-3.5 px-6"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-indigo-100">${item.bin || ''}</span></td>
+                        <td class="py-3.5 px-6 font-medium text-slate-700">${item.code || ''}</td>
+                        <td class="py-3.5 px-6 text-slate-600">${item.wh || ''}</td>
+                        <td class="py-3.5 px-6 text-right font-bold text-slate-900">${Number(item.quality || 0).toLocaleString('vi-VN')}</td>
                     `;
                 }
                 tbody.appendChild(tr);
             });
         }
 
-        // --- 7. BỘ LỌC THÔNG MINH ---
+        // --- 6. BỘ LỌC THÔNG MINH ---
         function applyFilters() {
             const filterCode = document.getElementById('filterCode').value.toLowerCase().trim();
             const filterBin = document.getElementById('filterBin').value.toLowerCase().trim();
@@ -367,10 +352,10 @@
             const filterTag = document.getElementById('filterTag').value.toLowerCase().trim();
 
             filteredData = inventoryData.filter(item => {
-                const matchCode = item.code.toLowerCase().includes(filterCode);
-                const matchBin = item.bin.toLowerCase().includes(filterBin);
-                const matchWH = item.wh.toLowerCase().includes(filterWH);
-                const matchTag = item.tag_id.toLowerCase().includes(filterTag);
+                const matchCode = (item.code || '').toLowerCase().includes(filterCode);
+                const matchBin = (item.bin || '').toLowerCase().includes(filterBin);
+                const matchWH = (item.wh || '').toLowerCase().includes(filterWH);
+                const matchTag = (item.tag_id || '').toLowerCase().includes(filterTag);
                 return matchCode && matchBin && matchWH && matchTag;
             });
 
@@ -379,7 +364,7 @@
             updateChart();
         }
 
-        // --- 8. ĐIỀU KHIỂN CHẾ ĐỘ SỬA TOÀN BẢNG ---
+        // --- 7. ĐIỀU KHIỂN CHẾ ĐỘ SỬA TOÀN BẢNG ---
         function toggleBulkEditMode() {
             isEditMode = true;
             document.getElementById('btnToggleEdit').classList.add('hidden');
@@ -396,6 +381,7 @@
             renderTable();
         }
 
+        // --- LƯU THAY ĐỔI HÀNG LOẠT LÊN SUPABASE ---
         async function saveBulkChanges() {
             const inputs = document.querySelectorAll('#inventoryTableBody input');
             const updatedRowsMap = {};
@@ -413,35 +399,31 @@
                 updatedRowsMap[id][field] = val;
             });
 
-            // Cập nhật lại vào mảng cục bộ
-            for (const id in updatedRowsMap) {
-                const itemIndex = inventoryData.findIndex(item => item.id == id);
-                if (itemIndex > -1) {
-                    inventoryData[itemIndex] = { ...inventoryData[itemIndex], ...updatedRowsMap[id] };
+            try {
+                // Đẩy các thay đổi cập nhật lên cơ sở dữ liệu thật của Supabase
+                for (const id in updatedRowsMap) {
+                    const { error } = await supabaseClient
+                        .from('inventory')
+                        .update(updatedRowsMap[id])
+                        .eq('id', id);
+                    
+                    if (error) throw error;
                 }
-            }
 
-            /* 
-            // CODE LƯU VÀO SUPABASE THẬT SỰ
-            for (const id in updatedRowsMap) {
-                const { error } = await supabaseClient
-                    .from('inventory')
-                    .update(updatedRowsMap[id])
-                    .eq('id', id);
-                if (error) console.error("Lỗi cập nhật dòng " + id, error);
+                isEditMode = false;
+                document.getElementById('btnToggleEdit').classList.remove('hidden');
+                document.getElementById('btnSaveBulk').classList.add('hidden');
+                document.getElementById('btnCancelBulk').classList.add('hidden');
+                
+                alert('Đã cập nhật thay đổi thành công lên cơ sở dữ liệu!');
+                await fetchFromSupabase(); // Đồng bộ lại dữ liệu mới từ máy chủ
+            } catch (err) {
+                console.error("Lỗi cập nhật hàng loạt: ", err);
+                alert("Không thể lưu thay đổi: " + err.message);
             }
-            */
-
-            isEditMode = false;
-            document.getElementById('btnToggleEdit').classList.remove('hidden');
-            document.getElementById('btnSaveBulk').classList.add('hidden');
-            document.getElementById('btnCancelBulk').classList.add('hidden');
-            
-            alert('Đã cập nhật dữ liệu thành công.');
-            applyFilters();
         }
 
-        // --- 9. XỬ LÝ ĐÓNG MỞ CỬA SỔ NỔI ---
+        // --- 8. ĐÓNG MỞ CỬA SỔ NỔI ---
         function openModal(id) {
             const modal = document.getElementById(id);
             modal.classList.remove('hidden');
@@ -460,7 +442,7 @@
             }, 300);
         }
 
-        // --- 10. XỬ LÝ NHẬP KHO (INBOUND SUBMIT) ---
+        // --- 9. XỬ LÝ NHẬP KHO LÊN SUPABASE (INSERT) ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
             const tagId = document.getElementById('inboundTagId').value;
@@ -469,77 +451,74 @@
             const wh = document.getElementById('inboundWH').value;
             const quality = Number(document.getElementById('inboundQuality').value);
 
-            const newItem = {
-                id: Math.floor(Math.random() * 10000) + 4000, // ID giả định
-                created_at: new Date().toISOString(),
-                tag_id: tagId,
-                bin: bin,
-                code: code,
-                wh: wh,
-                quality: quality
-            };
+            try {
+                const { error } = await supabaseClient
+                    .from('inventory')
+                    .insert([{ tag_id: tagId, bin: bin, code: code, wh: wh, quality: quality }]);
 
-            inventoryData.unshift(newItem); // Đưa lên đầu danh sách cục bộ
+                if (error) throw error;
 
-            /*
-            // CODE LƯU VÀO SUPABASE THẬT SỰ
-            const { error } = await supabaseClient
-                .from('inventory')
-                .insert([{ tag_id: tagId, bin, code, wh, quality }]);
-            if (error) alert("Lỗi khi đẩy lên Supabase: " + error.message);
-            */
-
-            closeModal('inboundModal');
-            document.getElementById('inboundForm').reset();
-            applyFilters();
-            alert('Đã nhập kho thành công sản phẩm mới!');
+                closeModal('inboundModal');
+                document.getElementById('inboundForm').reset();
+                alert('Đã thêm dữ liệu nhập kho vào cơ sở dữ liệu!');
+                await fetchFromSupabase(); // Tải lại danh sách
+            } catch (err) {
+                console.error("Lỗi khi thêm mới dữ liệu: ", err);
+                alert("Nhập kho thất bại: " + err.message);
+            }
         }
 
-        // --- 11. XỬ LÝ XUẤT KHO (OUTBOUND SUBMIT) ---
+        // --- 10. XỬ LÝ XUẤT KHO TRÊN SUPABASE (UPDATE / DELETE) ---
         async function handleOutboundSubmit(e) {
             e.preventDefault();
             const tagId = document.getElementById('outboundTagId').value;
             const qtyStr = document.getElementById('outboundQty').value;
             const qtyToReduce = qtyStr ? Number(qtyStr) : null;
 
-            const itemIndex = inventoryData.findIndex(item => item.tag_id === tagId);
-
-            if (itemIndex === -1) {
-                alert("Không tìm thấy vị trí tồn kho nào khớp với Tag ID này!");
-                return;
-            }
-
-            const currentQty = Number(inventoryData[itemIndex].quality);
-
-            if (qtyToReduce === null || qtyToReduce >= currentQty) {
-                // Xuất toàn bộ -> xóa bản ghi khỏi danh sách
-                inventoryData.splice(itemIndex, 1);
-                alert(`Đã xuất toàn bộ mã tag ${tagId} ra khỏi kho.`);
-
-                /*
-                // CODE XÓA KHỎI SUPABASE THẬT SỰ
-                const { error } = await supabaseClient
+            try {
+                // Kiểm tra sự tồn tại của thẻ trong kho dữ liệu Supabase
+                const { data, error: fetchError } = await supabaseClient
                     .from('inventory')
-                    .delete()
+                    .select('*')
                     .eq('tag_id', tagId);
-                */
-            } else {
-                // Xuất bớt -> trừ sản lượng
-                inventoryData[itemIndex].quality = currentQty - qtyToReduce;
-                alert(`Đã giảm ${qtyToReduce} sản phẩm thuộc tag ${tagId}. Số lượng còn lại: ${inventoryData[itemIndex].quality}`);
 
-                /*
-                // CODE UPDATE LÊN SUPABASE THẬT SỰ
-                const { error } = await supabaseClient
-                    .from('inventory')
-                    .update({ quality: currentQty - qtyToReduce })
-                    .eq('tag_id', tagId);
-                */
+                if (fetchError) throw fetchError;
+
+                if (!data || data.length === 0) {
+                    alert("Không tìm thấy mã Tag ID này trong hệ thống!");
+                    return;
+                }
+
+                const currentItem = data[0];
+                const currentQty = Number(currentItem.quality || 0);
+
+                if (qtyToReduce === null || qtyToReduce >= currentQty) {
+                    // Xuất hết -> tiến hành xóa dòng khỏi bảng
+                    const { error: deleteError } = await supabaseClient
+                        .from('inventory')
+                        .delete()
+                        .eq('tag_id', tagId);
+                    
+                    if (deleteError) throw deleteError;
+                    alert(`Đã xuất và loại bỏ hoàn toàn thẻ ${tagId} ra khỏi kho.`);
+                } else {
+                    // Xuất bớt -> giảm số lượng cột quality
+                    const { error: updateError } = await supabaseClient
+                        .from('inventory')
+                        .update({ quality: currentQty - qtyToReduce })
+                        .eq('tag_id', tagId);
+
+                    if (updateError) throw updateError;
+                    alert(`Đã giảm ${qtyToReduce} sản phẩm thuộc thẻ ${tagId}.`);
+                }
+
+                closeModal('outboundModal');
+                document.getElementById('outboundForm').reset();
+                await fetchFromSupabase(); // Đồng bộ lại dữ liệu
+            } catch (err) {
+                console.error("Lỗi thực thi quy trình xuất kho: ", err);
+                alert("Xuất kho thất bại: " + err.message);
             }
-
-            closeModal('outboundModal');
-            document.getElementById('outboundForm').reset();
-            applyFilters();
         }
     </script>
 </body>
