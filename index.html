@@ -38,6 +38,11 @@
         </div>
         
         <div class="flex items-center space-x-4">
+            <!-- Nút liên kết tới Kho Thành Phẩm -->
+            <a href="https://pqvinh99-glory.github.io/Ivenrory-FG/" target="_blank" class="bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md flex items-center">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Kho Thành Phẩm
+            </a>
+
             <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                 <i class="fa-solid fa-user-shield text-blue-400"></i>
                 <span class="font-medium">User:</span>
@@ -436,7 +441,7 @@
                 if (sysErr) throw sysErr;
                 systemInventoryData = sysData || [];
 
-                // Tải bảng đối chiếu chênh lệch trực tiếp từ View public.v_inventory_comparison [2]
+                // Tải bảng đối chiếu chênh lệch trực tiếp từ View public.v_inventory_comparison
                 const { data: compData, error: compErr } = await supabaseClient
                     .from('v_inventory_comparison')
                     .select('*');
@@ -563,7 +568,7 @@
             }
         }
 
-        // --- CẬP NHẬT 5 THÈ KPI SO SÁNH ĐỒNG BỘ [2] ---
+        // --- CẬP NHẬT 5 THÈ KPI SO SÁNH ĐỒNG BỘ ---
         function updateStats() {
             // Thẻ 1: Dòng Thực Tế
             document.getElementById('statTotalRows').innerText = filteredData.length;
@@ -572,15 +577,15 @@
             const totalQuality = filteredData.reduce((acc, curr) => acc + Number(curr.quality || 0), 0);
             document.getElementById('statTotalQuality').innerText = totalQuality.toLocaleString('vi-VN');
             
-            // Thẻ 3: Số mã hàng hệ thống có trong bảng so sánh [2]
+            // Thẻ 3: Số mã hàng hệ thống có trong bảng so sánh
             const uniqueCodes = [...new Set(filteredData.map(item => item.code))].length;
             document.getElementById('statSystemRows').innerText = uniqueCodes;
 
-            // Thẻ 4: Lượng Hệ Thống [2]
+            // Thẻ 4: Lượng Hệ Thống
             const totalSystemQuality = filteredComparisonData.reduce((acc, curr) => acc + Number(curr.system_qty || 0), 0);
             document.getElementById('statSystemQuality').innerText = totalSystemQuality.toLocaleString('vi-VN');
 
-            // Thẻ 5: Tổng lượng chênh lệch (Thực tế trừ Hệ thống) [2]
+            // Thẻ 5: Tổng lượng chênh lệch (Thực tế trừ Hệ thống)
             const totalVarianceQty = totalQuality - totalSystemQuality;
             const statTotalVariance = document.getElementById('statTotalVariance');
             statTotalVariance.innerText = totalVarianceQty.toLocaleString('vi-VN');
@@ -1096,7 +1101,7 @@
                 return;
             }
 
-            // Tự động phát hiện dấu phân cách (Semicolon ';' hoặc Comma ',') [2]
+            // Tự động phát hiện dấu phân cách (Semicolon ';' hoặc Comma ',')
             const firstLine = lines[0];
             let delimiter = ',';
             if (firstLine.includes(';')) {
@@ -1124,7 +1129,7 @@
                 return;
             }
 
-            // Thuật toán lọc trùng và lấy bản ghi cuối cùng (Deduplication) [2]
+            // Thuật toán lọc trùng và lấy bản ghi cuối cùng (Deduplication)
             const latestRecordsMap = {};
 
             for (let i = 1; i < lines.length; i++) {
@@ -1140,11 +1145,11 @@
                     quality: Number(values[qtyIdx] || 0)
                 };
 
-                // Đè giá trị cũ bằng giá trị sau cùng trong file tệp để lấy dữ liệu cuối cùng [2]
+                // Đè giá trị cũ bằng giá trị sau cùng trong file tệp để lấy dữ liệu cuối cùng
                 latestRecordsMap[batchTagId] = record;
             }
 
-            const payload = Object.values(latestRecordsMap); // Lấy mảng dữ liệu cuối cùng sạch nhất [2]
+            const payload = Object.values(latestRecordsMap); // Lấy mảng dữ liệu cuối cùng sạch nhất
 
             try {
                 // Xóa sạch bảng hệ thống nguồn cũ
