@@ -38,22 +38,27 @@
         </div>
         
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-center lg:justify-end">
-            <!-- Nút liên kết tới Kho Thành Phẩm & User Selector -->
+            <!-- Nút liên kết tới Kho Thành Phẩm & Menu Thông tin User -->
             <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
                 <a href="https://pqvinh99-glory.github.io/Ivenrory-FG/" target="_blank" class="bg-amber-600 hover:bg-amber-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition duration-200 shadow-md flex items-center shrink-0">
                     <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>Kho Thành Phẩm
                 </a>
                 
-                <div class="flex items-center space-x-2 text-xs sm:text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 w-full sm:w-auto justify-between sm:justify-start">
-                    <div class="flex items-center space-x-1 shrink-0">
-                        <i class="fa-solid fa-user-shield text-blue-400"></i>
-                        <span class="font-medium">User:</span>
+                <!-- Giao diện hiển thị Menu User sau khi đăng nhập -->
+                <div id="userMenu" class="flex items-center space-x-3 text-xs sm:text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+                    <div class="flex items-center space-x-2">
+                        <div id="userAvatar" class="w-6 h-6 sm:w-7 sm:h-7 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-xs shrink-0">
+                            -
+                        </div>
+                        <div class="text-left">
+                            <p id="userDisplayName" class="font-bold text-white text-[11px] sm:text-xs">Guest</p>
+                            <p id="userRoleBadge" class="text-[9px] sm:text-[10px] text-slate-400 font-semibold leading-none">Role</p>
+                        </div>
                     </div>
-                    <select id="userSelector" onchange="handleUserChange()" class="bg-slate-700 text-white rounded px-2 py-0.5 border border-slate-600 focus:outline-none text-xs sm:text-sm">
-                        <option value="Admin" selected>Admin (Toàn quyền)</option>
-                        <option value="Operator">Operator (Nhập/Xuất)</option>
-                        <option value="Viewer">Viewer (Chỉ xem)</option>
-                    </select>
+                    <!-- Nút đăng xuất -->
+                    <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 p-1 transition duration-150 shrink-0" title="Đăng xuất">
+                        <i class="fa-solid fa-right-from-bracket text-sm sm:text-base"></i>
+                    </button>
                 </div>
             </div>
             
@@ -254,6 +259,58 @@
 
     </main>
 
+    <!-- ==================== GIAO DIỆN ĐĂNG NHẬP HỆ THỐNG (MẶC ĐỊNH PHỦ TOÀN MÀN HÌNH) ==================== -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 space-y-6 border border-slate-100 transform transition-all duration-300">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-sm">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">ĐĂNG NHẬP HỆ THỐNG</h2>
+                <p class="text-xs text-slate-500">Vui lòng sử dụng tài khoản nội bộ được cấp phép</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1 tracking-wider">Tên tài khoản (Username)</label>
+                    <div class="relative">
+                        <input type="text" required id="loginUsername" placeholder="Ví dụ: luu, vinh, trinh..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1 tracking-wider">Mật khẩu (Password)</label>
+                    <div class="relative">
+                        <input type="password" required id="loginPassword" placeholder="Nhập mật khẩu..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center space-x-2 text-xs text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" id="rememberMe" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4">
+                        <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                </div>
+
+                <div id="loginErrorMessage" class="text-rose-500 text-xs font-medium hidden text-center bg-rose-50 py-2 rounded-lg border border-rose-100">
+                    <!-- Thông báo lỗi hiển thị ở đây -->
+                </div>
+
+                <button type="submit" id="btnLoginSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition duration-150 text-sm flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Đăng Nhập</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
     <!-- ==================== MODALS / CỬA SỔ NỔI ==================== -->
 
     <!-- Modal Nhập Kho Thực Tế -->
@@ -416,9 +473,9 @@
         let filteredComparisonData = []; // Dữ liệu so sánh chênh lệch đã lọc
         let filteredData = [];       
         let logData = [];           
-        let currentRole = "Admin"; 
-        let isEditMode = false;     
-        let editingRowId = null;  
+        let currentUser = null;       // Đối tượng user đăng nhập hiện tại
+        let currentRole = "Viewer";   // Vai trò mặc định ban đầu
+        let currentDisplayName = "Guest"; // Tên hiển thị người thực hiện
         let mainChart = null;
 
         // --- HÀM KHÔI PHỤC ZOOM CHO BIỂU ĐỒ ---
@@ -426,6 +483,127 @@
             if (mainChart) {
                 mainChart.resetZoom();
             }
+        }
+
+        // --- KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP ---
+        async function checkLoginState() {
+            const savedUser = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    currentRole = currentUser.role;
+                    currentDisplayName = currentUser.display_name;
+                    
+                    // Cập nhật giao diện thông tin User ở góc phải
+                    document.getElementById('userDisplayName').innerText = currentDisplayName;
+                    document.getElementById('userRoleBadge').innerText = currentRole;
+                    document.getElementById('userAvatar').innerText = currentDisplayName.charAt(0).toUpperCase();
+                    
+                    // Ẩn màn hình đăng nhập
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    
+                    // Khởi chạy đồng bộ dữ liệu
+                    await fetchFromSupabase();
+                    await fetchLogsFromSupabase();
+                    applyRolePermissions();
+                } catch (e) {
+                    console.error("Lỗi parse thông tin đăng nhập: ", e);
+                    showLoginScreen();
+                }
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        // --- XỬ LÝ ĐĂNG NHẬP ---
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('loginUsername').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const errorDiv = document.getElementById('loginErrorMessage');
+            const btnSubmit = document.getElementById('btnLoginSubmit');
+
+            errorDiv.classList.add('hidden');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Đang xác thực...</span>`;
+
+            try {
+                // Kiểm tra tài khoản trong bảng app_users của Supabase
+                const { data, error } = await supabaseClient
+                    .from('app_users')
+                    .select('*')
+                    .eq('username', usernameInput)
+                    .eq('password', passwordInput)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (!data) {
+                    errorDiv.innerText = "Tên đăng nhập hoặc mật khẩu không chính xác.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Thiết lập phiên đăng nhập mới
+                currentUser = data;
+                currentRole = data.role;
+                currentDisplayName = data.display_name;
+
+                // Lưu trạng thái đăng nhập
+                const userString = JSON.stringify(currentUser);
+                if (rememberMe) {
+                    localStorage.setItem('loggedInUser', userString);
+                } else {
+                    sessionStorage.setItem('loggedInUser', userString);
+                }
+
+                // Cập nhật thông tin góc phải
+                document.getElementById('userDisplayName').innerText = currentDisplayName;
+                document.getElementById('userRoleBadge').innerText = currentRole;
+                document.getElementById('userAvatar').innerText = currentDisplayName.charAt(0).toUpperCase();
+
+                // Ẩn màn hình đăng nhập và tải tài nguyên
+                document.getElementById('loginScreen').classList.add('hidden');
+                await fetchFromSupabase();
+                await fetchLogsFromSupabase();
+                applyRolePermissions();
+
+            } catch (err) {
+                console.error("Lỗi đăng nhập: ", err);
+                errorDiv.innerText = "Lỗi xác thực: " + err.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span>Đăng Nhập</span>`;
+            }
+        }
+
+        // --- XỬ LÝ ĐĂNG XUẤT ---
+        function handleLogout() {
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('loggedInUser');
+            currentUser = null;
+            currentRole = "Viewer";
+            currentDisplayName = "Viewer";
+            
+            // Xóa sạch dữ liệu cục bộ nhằm bảo mật phiên làm việc trước
+            inventoryData = [];
+            systemInventoryData = [];
+            comparisonData = [];
+            filteredData = [];
+            filteredComparisonData = [];
+            logData = [];
+            
+            // Làm sạch ô nhập liệu và hiển thị lại màn hình login
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginErrorMessage').classList.add('hidden');
+            showLoginScreen();
         }
 
         // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
@@ -489,21 +667,8 @@
         // --- Khởi tạo ứng dụng ---
         window.addEventListener('DOMContentLoaded', async () => {
             initChart();
-            await fetchFromSupabase();
-            await fetchLogsFromSupabase(); 
-            applyRolePermissions();
+            await checkLoginState(); // Tiến hành kiểm tra và khởi tạo đăng nhập trước
         });
-
-        // --- 3. QUẢN LÝ PHÂN QUYỀN USER ---
-        function handleUserChange() {
-            currentRole = document.getElementById('userSelector').value;
-            applyRolePermissions();
-            if (editingRowId !== null) {
-                editingRowId = null;
-                isEditMode = false;
-                renderTable();
-            }
-        }
 
         function applyRolePermissions() {
             const btnOpenInbound = document.getElementById('btnOpenInbound');
@@ -539,7 +704,7 @@
                 const { error } = await supabaseClient
                     .from('ghilog')
                     .insert([{
-                        username: currentRole,
+                        username: currentDisplayName, // GHI NHẬN CHÍNH XÁC DISPLAY NAME CỦA USER VÀO CỘT NGƯỜI THỰC HIỆN
                         action_type: actionType,
                         tag_id: tagId,
                         code: code,
@@ -820,7 +985,7 @@
             }
         }
 
-        // --- ĐỒNG BỘ BỘ LỌC THÔNG MINH ---
+        // --- ĐỒNG BỘ BỘ LỌC THÔNG MINH CHO CẢ 2 BẢNG THỰC TẾ & HỆ THỐNG ---
         function applyFilters() {
             const query = document.getElementById('smartFilter').value.toLowerCase().trim();
 
