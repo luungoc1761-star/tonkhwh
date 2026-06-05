@@ -6,8 +6,8 @@
     <title>Quản lý Vị trí Tồn kho</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (Thư viện xuất file Excel.xlsx chuẩn cấu trúc) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase JS Library -->
@@ -16,24 +16,37 @@
 <body class="bg-slate-50 text-slate-800 font-sans">
 
     <!-- Header / Navbar -->
-    <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
+    <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center flex-wrap gap-4">
         <div class="flex items-center space-x-3">
             <i class="fa-solid fa-warehouse text-2xl text-blue-400"></i>
             <span class="text-xl font-bold tracking-wider">HỆ THỐNG QUẢN LÝ VỊ TRÍ TỒN KHO</span>
         </div>
-        <div class="flex space-x-3">
-            <button onclick="openModal('inboundModal')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md">
-                <i class="fa-solid fa-plus mr-2"></i>Nhập Kho
-            </button>
-            <button onclick="openModal('outboundModal')" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md">
-                <i class="fa-solid fa-minus mr-2"></i>Xuất Kho
-            </button>
+        
+        <!-- Khung Phân Quyền User & Lưu trữ Phiên hoạt động -->
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 text-sm text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                <i class="fa-solid fa-user-shield text-blue-400"></i>
+                <span class="font-medium">User:</span>
+                <select id="userSelector" onchange="handleUserChange()" class="bg-slate-700 text-white rounded px-2 py-0.5 border border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="Admin" selected>Admin (Toàn quyền)</option>
+                    <option value="Operator">Operator (Nhập/Xuất)</option>
+                    <option value="Viewer">Viewer (Chỉ xem)</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button id="btnOpenInbound" onclick="openModal('inboundModal')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md">
+                    <i class="fa-solid fa-plus mr-1"></i>Nhập Kho
+                </button>
+                <button id="btnOpenOutbound" onclick="openModal('outboundModal')" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md">
+                    <i class="fa-solid fa-minus mr-1"></i>Xuất Kho
+                </button>
+            </div>
         </div>
     </header>
 
     <main class="p-6 max-w-7xl mx-auto space-y-6">
 
-        <!-- KPI / Summary Cards & Chart Section -->
+        <!-- KPI / Summary Cards & Pivot Table Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Summary Stats -->
             <div class="space-y-4 col-span-1">
@@ -66,57 +79,56 @@
                 </div>
             </div>
 
-            <!-- Dashboard Chart: Code & Quality -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2">
-                <h4 class="font-bold text-slate-700 mb-4 flex items-center">
-                    <i class="fa-solid fa-chart-bar text-blue-500 mr-2"></i> Biểu đồ sản lượng theo Mã hàng (Code & Quality)
+            <!-- BẢNG PHÂN TÍCH PIVOT (Thay thế cho biểu đồ cũ, tự động liên kết với thanh bộ lọc) -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2 flex flex-col h-[282px]">
+                <h4 class="font-bold text-slate-700 mb-3 flex items-center justify-between">
+                    <span><i class="fa-solid fa-arrows-to-dot text-indigo-500 mr-2"></i>Bảng Phân Tích Pivot (Tổng sản lượng theo Code)</span>
+                    <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full border border-indigo-100">Cập nhật theo bộ lọc</span>
                 </h4>
-                <div class="h-56">
-                    <canvas id="qualityChart"></canvas>
+                <div class="overflow-y-auto flex-1 border border-slate-100 rounded-lg">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-50 text-slate-500 uppercase font-semibold sticky top-0 border-b border-slate-200">
+                            <tr>
+                                <th class="py-2.5 px-4">STT</th>
+                                <th class="py-2.5 px-4">Mã hàng (Code)</th>
+                                <th class="py-2.5 px-4 text-right">Tổng Sản Lượng (Quality)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pivotTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
+                            <!-- JS renders pivot rows here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Smart Filter Panel -->
+        <!-- Smart Filter Panel (Gộp 4 thanh bộ lọc cũ thành 1) -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <h4 class="font-bold text-slate-700 mb-4 flex items-center">
-                <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh
+                <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh toàn diện
             </h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Mã hàng (Code)</label>
-                    <input type="text" id="filterCode" placeholder="Nhập mã hàng..." oninput="applyFilters()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Vị trí (Bin)</label>
-                    <input type="text" id="filterBin" placeholder="Nhập vị trí bin..." oninput="applyFilters()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kho (WH)</label>
-                    <input type="text" id="filterWH" placeholder="Nhập mã kho..." oninput="applyFilters()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Mã Tag (Tag ID)</label>
-                    <input type="text" id="filterTag" placeholder="Nhập mã tag..." oninput="applyFilters()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
+                <input type="text" id="smartFilter" placeholder="Tìm kiếm nhanh... Nhập mã hàng (code), vị trí (bin), mã tag (tagid), hoặc kho (wh) để lọc tự động..." oninput="applyFilters()" class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm">
             </div>
         </div>
 
         <!-- Data Table Section -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
+            <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
                 <h4 class="font-bold text-slate-700 flex items-center">
                     <i class="fa-solid fa-table text-slate-500 mr-2"></i> Danh sách chi tiết tồn kho
                 </h4>
-                <div class="flex space-x-2">
-                    <button id="btnToggleEdit" onclick="toggleBulkEditMode()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fa-solid fa-pen-to-square mr-1"></i> Chỉnh sửa toàn bảng
+                
+                <!-- Bổ sung nút Export Excel và nút Import CSV tiện ích -->
+                <div class="flex items-center space-x-2">
+                    <button id="btnImportCsv" onclick="openModal('csvImportModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition duration-150 shadow-sm">
+                        <i class="fa-solid fa-file-csv mr-1"></i> Nhập dữ liệu CSV
                     </button>
-                    <button id="btnSaveBulk" onclick="saveBulkChanges()" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> Lưu thay đổi
-                    </button>
-                    <button id="btnCancelBulk" onclick="cancelBulkChanges()" class="hidden bg-slate-300 hover:bg-slate-400 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        Hủy
+                    <button onclick="exportToExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition duration-150 shadow-sm">
+                        <i class="fa-solid fa-file-excel mr-1"></i> Xuất File Excel
                     </button>
                 </div>
             </div>
@@ -132,6 +144,7 @@
                             <th class="py-3.5 px-6">Mã hàng (Code)</th>
                             <th class="py-3.5 px-6">Kho (WH)</th>
                             <th class="py-3.5 px-6 text-right">Sản lượng (Quality)</th>
+                            <th class="py-3.5 px-6 text-center" id="colActionHeader">Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody" class="divide-y divide-slate-200 text-sm">
@@ -163,8 +176,10 @@
                         <input type="text" required id="inboundBin" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
+                        <!-- Nâng cấp Datalist: Gợi ý các Mã Code đã có sẵn trong cơ sở dữ liệu -->
                         <label class="block text-sm font-medium text-slate-600 mb-1">Code (Mã hàng)</label>
-                        <input type="text" required id="inboundCode" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" required id="inboundCode" list="codeSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <datalist id="codeSuggestions"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">WH (Kho)</label>
@@ -183,14 +198,30 @@
         </div>
     </div>
 
-    <!-- Modal Xuất Kho -->
+    <!-- Modal Xuất Kho (Nâng cấp thêm 3 Mode xuất: WO, Yêu Cầu, Vật Liệu Tiêu Hao) -->
     <div id="outboundModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
             <div class="bg-rose-600 px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-truck-ramp-box mr-2"></i>Xuất Kho theo Tag ID</h3>
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-truck-ramp-box mr-2"></i>Xuất Kho Nâng Cao</h3>
                 <button onclick="closeModal('outboundModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="outboundForm" onsubmit="handleOutboundSubmit(event)" class="p-6 space-y-4">
+                <!-- Chọn Mode Xuất Kho -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Chế độ xuất (Mode)</label>
+                    <select id="outboundMode" onchange="toggleOutboundModeField()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="WO" selected>Xuất theo lệnh sản xuất (WO)</option>
+                        <option value="YEU_CAU">Xuất phát theo phiếu yêu cầu</option>
+                        <option value="TIEU_HAO">Xuất phát vật liệu tiêu hao</option>
+                    </select>
+                </div>
+
+                <!-- Trường nhập lệnh WO bổ sung (Chỉ hiện khi chọn mode WO) -->
+                <div id="outboundWoField">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Nhập Số Lệnh WO</label>
+                    <input type="text" id="outboundWoValue" placeholder="Nhập mã lệnh sản xuất..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-slate-600 mb-1">Quét hoặc Nhập Tag ID</label>
                     <div class="relative">
@@ -201,8 +232,8 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Số lượng xuất bớt (Để trống hoặc điền 0 nếu muốn xuất toàn bộ)</label>
-                    <input type="number" id="outboundQty" placeholder="Nếu xuất hết để trống..." class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Số lượng xuất bớt (Để trống hoặc điền 0 nếu xuất hết)</label>
+                    <input type="number" id="outboundQty" placeholder="Giữ nguyên xuất 1 phần & xuất hết..." class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none">
                 </div>
                 <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
                     <button type="button" onclick="closeModal('outboundModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">Hủy</button>
@@ -212,7 +243,40 @@
         </div>
     </div>
 
-    <!-- Script điều khiển -->
+    <!-- Modal Nhập Nhanh Dữ Liệu bằng CSV (giống cấu hình Supabase CSV Import) -->
+    <div id="csvImportModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="bg-indigo-600 px-6 py-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-file-import mr-2"></i>Nhập Nhanh Dữ Liệu bằng CSV</h3>
+                <button onclick="closeModal('csvImportModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200 leading-relaxed">
+                    <span class="font-bold text-slate-700 block mb-1">Định dạng mẫu dòng tiêu đề CSV bắt buộc:</span>
+                    <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">tag_id,bin,code,wh,quality</code>
+                    <p class="mt-2 text-rose-500 font-semibold">* Lưu ý: Hệ thống sẽ phân tách tự động bằng dấu phẩy (,).</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Dán nội dung văn bản CSV trực tiếp:</label>
+                    <textarea id="csvTextArea" rows="6" placeholder="tag_id,bin,code,wh,quality&#10;900002950009,100602,3430490101,61,500&#10;900002950010,100605,3430490102,61,250" class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="border-t border-slate-100 pt-4 flex justify-between items-center">
+                    <div class="relative">
+                        <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)" class="hidden">
+                        <button type="button" onclick="document.getElementById('csvFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg font-semibold border border-slate-300">
+                            <i class="fa-solid fa-file-arrow-up mr-1"></i>Chọn từ máy tính (.csv)
+                        </button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeModal('csvImportModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Hủy</button>
+                        <button type="button" onclick="processCSVImport()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-md">Thực Thi Nhập</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script điều khiển nâng cấp đồng bộ -->
     <script>
         // --- 1. KẾT NỐI SUPABASE CHÍNH THỨC ---
         const SUPABASE_URL = 'https://ayxhdqaendspvdxibayh.supabase.co';
@@ -221,8 +285,8 @@
         
         let inventoryData = [];
         let filteredData = [];
-        let isEditMode = false;
-        let mainChart = null;
+        let currentRole = "Admin"; // Vai trò mặc định: Admin
+        let editingRowId = null;  // Quản lý trạng thái chỉnh sửa theo TỪNG DÒNG độc lập
 
         // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
         async function fetchFromSupabase() {
@@ -238,9 +302,11 @@
                 
                 inventoryData = data || [];
                 filteredData = [...inventoryData];
+                
                 renderTable();
                 updateStats();
-                updateChart();
+                updatePivotTable();
+                updateCodeSuggestions();
             } catch (err) {
                 console.error("Lỗi đồng bộ dữ liệu Supabase: ", err);
                 alert("Không thể tải dữ liệu từ cơ sở dữ liệu: " + err.message);
@@ -249,11 +315,71 @@
 
         // --- Khởi tạo ứng dụng ---
         window.addEventListener('DOMContentLoaded', async () => {
-            initChart();
-            await fetchFromSupabase(); // Gọi lấy dữ liệu thực tế ngay khi trang web được tải
+            await fetchFromSupabase();
+            applyRolePermissions();
         });
 
-        // --- 3. CẬP NHẬT STATS ---
+        // --- 3. QUẢN LÝ PHÂN QUYỀN USER ---
+        function handleUserChange() {
+            currentRole = document.getElementById('userSelector').value;
+            applyRolePermissions();
+            // Nếu đổi role trong lúc đang sửa dòng thì hủy trạng thái sửa
+            if (editingRowId !== null) {
+                editingRowId = null;
+                renderTable();
+            }
+        }
+
+        function applyRolePermissions() {
+            const btnOpenInbound = document.getElementById('btnOpenInbound');
+            const btnOpenOutbound = document.getElementById('btnOpenOutbound');
+            const btnImportCsv = document.getElementById('btnImportCsv');
+            const btnToggleEdit = document.getElementById('btnToggleEdit');
+            
+            if (currentRole === "Admin") {
+                btnOpenInbound.classList.remove('hidden');
+                btnOpenOutbound.classList.remove('hidden');
+                btnImportCsv.classList.remove('hidden');
+                btnToggleEdit.classList.remove('hidden');
+                document.getElementById('colActionHeader').style.display = "";
+            } else if (currentRole === "Operator") {
+                btnOpenInbound.classList.remove('hidden');
+                btnOpenOutbound.classList.remove('hidden');
+                btnImportCsv.classList.add('hidden');
+                btnToggleEdit.classList.add('hidden');
+                document.getElementById('colActionHeader').style.display = "none";
+            } else { // Viewer chỉ có thể xem
+                btnOpenInbound.classList.add('hidden');
+                btnOpenOutbound.classList.add('hidden');
+                btnImportCsv.classList.add('hidden');
+                btnToggleEdit.classList.add('hidden');
+                document.getElementById('colActionHeader').style.display = "none";
+            }
+            renderTable();
+        }
+
+        // --- 4. GHI LOG HOẠT ĐỘNG CHUYÊN NGHIỆP ---
+        async function logActivity(actionType, tagId, code, bin, wh, quality, details) {
+            try {
+                const { error } = await supabaseClient
+                    .from('ghilog')
+                    .insert([{
+                        username: currentRole,
+                        action_type: actionType,
+                        tag_id: tagId,
+                        code: code,
+                        bin: bin,
+                        wh: wh,
+                        quality: quality,
+                        details: details
+                    }]);
+                if (error) console.error("Lỗi khi ghi nhận lịch sử Log: ", error.message);
+            } catch (err) {
+                console.error("Lỗi luồng ghi Log: ", err);
+            }
+        }
+
+        // --- 5. CẬP NHẬT STATS ---
         function updateStats() {
             document.getElementById('statTotalRows').innerText = filteredData.length;
             const totalQuality = filteredData.reduce((acc, curr) => acc + Number(curr.quality || 0), 0);
@@ -263,73 +389,76 @@
             document.getElementById('statUniqueCodes').innerText = uniqueCodes;
         }
 
-        // --- 4. VẼ & CẬP NHẬT BIỂU ĐỒ (Chart.js) ---
-        function initChart() {
-            const ctx = document.getElementById('qualityChart').getContext('2d');
-            mainChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Sản lượng (Quality)',
-                        data: [],
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: 'rgb(59, 130, 246)',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(226, 232, 240, 0.6)' }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
-        }
+        // --- 6. CẬP NHẬT BẢNG PIVOT (Tổng lượng hàng gom theo từng Code) ---
+        function updatePivotTable() {
+            const pivotBody = document.getElementById('pivotTableBody');
+            pivotBody.innerHTML = '';
 
-        function updateChart() {
-            if (!mainChart) return;
-            const grouped = {};
+            const groupedData = {};
             filteredData.forEach(item => {
-                grouped[item.code] = (grouped[item.code] || 0) + Number(item.quality || 0);
+                const code = item.code || "KHO_KONG_XAC_DINH";
+                groupedData[code] = (groupedData[code] || 0) + Number(item.quality || 0);
             });
-            mainChart.data.labels = Object.keys(grouped);
-            mainChart.data.datasets[0].data = Object.values(grouped);
-            mainChart.update();
+
+            let index = 1;
+            for (const [code, sumQuality] of Object.entries(groupedData)) {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-2.5 px-4 text-slate-400 font-mono">${index++}</td>
+                    <td class="py-2.5 px-4 font-semibold text-slate-800">${code}</td>
+                    <td class="py-2.5 px-4 text-right text-indigo-600 font-bold font-mono">${sumQuality.toLocaleString('vi-VN')}</td>
+                `;
+                pivotBody.appendChild(tr);
+            }
+            if (Object.keys(groupedData).length === 0) {
+                pivotBody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">Không có dữ liệu phân tích</td></tr>`;
+            }
         }
 
-        // --- 5. HIỂN THỊ BẢNG DỮ LIỆU ---
+        // --- 7. TẠO SUGGESTIONS CHO NHẬP KHO (STOCK CODE) ---
+        function updateCodeSuggestions() {
+            const datalist = document.getElementById('codeSuggestions');
+            datalist.innerHTML = '';
+            
+            const uniqueCodes = [...new Set(inventoryData.map(item => item.code).filter(c => c))];
+            uniqueCodes.forEach(code => {
+                const option = document.createElement('option');
+                option.value = code;
+                datalist.appendChild(option);
+            });
+        }
+
+        // --- 8. HIỂN THỊ BẢNG DỮ LIỆU CHÍNH ---
         function renderTable() {
             const tbody = document.getElementById('inventoryTableBody');
             tbody.innerHTML = '';
 
-            filteredData.forEach((item, index) => {
+            filteredData.forEach((item) => {
                 const dateFormatted = new Date(item.created_at).toLocaleString('vi-VN');
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition duration-150";
 
-                if (isEditMode) {
+                // Chỉ hiển thị cột "Hành động" khi quyền của người dùng là Admin
+                const showActionCell = (currentRole === "Admin");
+
+                if (isEditMode && editingRowId === item.id) {
+                    // Chế độ chỉnh sửa dòng độc lập đang chọn
                     tr.innerHTML = `
                         <td class="py-3 px-6 text-slate-400 font-semibold font-mono">${item.id}</td>
                         <td class="py-3 px-6 text-slate-500">${dateFormatted}</td>
-                        <td class="py-3 px-6"><input type="text" value="${item.tag_id || ''}" data-id="${item.id}" data-field="tag_id" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.bin || ''}" data-id="${item.id}" data-field="bin" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.code || ''}" data-id="${item.id}" data-field="code" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="text" value="${item.wh || ''}" data-id="${item.id}" data-field="wh" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none"></td>
-                        <td class="py-3 px-6"><input type="number" value="${item.quality || 0}" data-id="${item.id}" data-field="quality" class="w-full px-2 py-1 border border-blue-400 rounded text-right focus:outline-none"></td>
+                        <td class="py-3 px-6"><input type="text" id="edit_tag_id" value="${item.tag_id || ''}" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none text-xs"></td>
+                        <td class="py-3 px-6"><input type="text" id="edit_bin" value="${item.bin || ''}" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none text-xs"></td>
+                        <td class="py-3 px-6"><input type="text" id="edit_code" value="${item.code || ''}" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none text-xs"></td>
+                        <td class="py-3 px-6"><input type="text" id="edit_wh" value="${item.wh || ''}" class="w-full px-2 py-1 border border-blue-400 rounded focus:outline-none text-xs"></td>
+                        <td class="py-3 px-6"><input type="number" id="edit_quality" value="${item.quality || 0}" class="w-full px-2 py-1 border border-blue-400 rounded text-right focus:outline-none text-xs"></td>
+                        <td class="py-3 px-6 text-center space-x-1">
+                            <button onclick="saveRowChanges(${item.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs"><i class="fa-solid fa-check"></i></button>
+                            <button onclick="cancelRowEdit()" class="bg-slate-300 hover:bg-slate-400 text-slate-700 px-2 py-1 rounded text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </td>
                     `;
                 } else {
+                    // Trạng thái hiển thị thông thường
                     tr.innerHTML = `
                         <td class="py-3.5 px-6 font-semibold font-mono text-slate-500">${item.id}</td>
                         <td class="py-3.5 px-6 text-slate-500">${dateFormatted}</td>
@@ -338,92 +467,77 @@
                         <td class="py-3.5 px-6 font-medium text-slate-700">${item.code || ''}</td>
                         <td class="py-3.5 px-6 text-slate-600">${item.wh || ''}</td>
                         <td class="py-3.5 px-6 text-right font-bold text-slate-900">${Number(item.quality || 0).toLocaleString('vi-VN')}</td>
+                        <td class="py-3.5 px-6 text-center" style="${showActionCell ? '' : 'display: none;'}">
+                            <button onclick="startRowEdit(${item.id})" class="text-blue-600 hover:text-blue-800 font-semibold text-xs inline-flex items-center space-x-1">
+                                <i class="fa-solid fa-pen"></i> <span>Sửa dòng</span>
+                            </button>
+                        </td>
                     `;
                 }
                 tbody.appendChild(tr);
             });
         }
 
-        // --- 6. BỘ LỌC THÔNG MINH ---
+        // --- 9. BỘ LỌC THÔNG MINH GỘP CHUNG (CODE, BIN, TAGID, WH) ---
         function applyFilters() {
-            const filterCode = document.getElementById('filterCode').value.toLowerCase().trim();
-            const filterBin = document.getElementById('filterBin').value.toLowerCase().trim();
-            const filterWH = document.getElementById('filterWH').value.toLowerCase().trim();
-            const filterTag = document.getElementById('filterTag').value.toLowerCase().trim();
+            const query = document.getElementById('smartFilter').value.toLowerCase().trim();
 
             filteredData = inventoryData.filter(item => {
-                const matchCode = (item.code || '').toLowerCase().includes(filterCode);
-                const matchBin = (item.bin || '').toLowerCase().includes(filterBin);
-                const matchWH = (item.wh || '').toLowerCase().includes(filterWH);
-                const matchTag = (item.tag_id || '').toLowerCase().includes(filterTag);
-                return matchCode && matchBin && matchWH && matchTag;
+                const matchCode = (item.code || '').toLowerCase().includes(query);
+                const matchBin = (item.bin || '').toLowerCase().includes(query);
+                const matchWH = (item.wh || '').toLowerCase().includes(query);
+                const matchTag = (item.tag_id || '').toLowerCase().includes(query);
+                return matchCode || matchBin || matchWH || matchTag;
             });
 
             renderTable();
             updateStats();
-            updateChart();
+            updatePivotTable();
         }
 
-        // --- 7. ĐIỀU KHIỂN CHẾ ĐỘ SỬA TOÀN BẢNG ---
-        function toggleBulkEditMode() {
+        // --- 10. ĐIỀU KHIỂN CHỈNH SỬA TỐI ƯU THEO TỪNG DÒNG ---
+        function startRowEdit(id) {
             isEditMode = true;
-            document.getElementById('btnToggleEdit').classList.add('hidden');
-            document.getElementById('btnSaveBulk').classList.remove('hidden');
-            document.getElementById('btnCancelBulk').classList.remove('hidden');
+            editingRowId = id;
             renderTable();
         }
 
-        function cancelBulkChanges() {
+        function cancelRowEdit() {
             isEditMode = false;
-            document.getElementById('btnToggleEdit').classList.remove('hidden');
-            document.getElementById('btnSaveBulk').classList.add('hidden');
-            document.getElementById('btnCancelBulk').classList.add('hidden');
+            editingRowId = null;
             renderTable();
         }
 
-        // --- LƯU THAY ĐỔI HÀNG LOẠT LÊN SUPABASE ---
-        async function saveBulkChanges() {
-            const inputs = document.querySelectorAll('#inventoryTableBody input');
-            const updatedRowsMap = {};
-
-            inputs.forEach(input => {
-                const id = input.getAttribute('data-id');
-                const field = input.getAttribute('data-field');
-                let val = input.value;
-
-                if (field === 'quality') val = Number(val);
-
-                if (!updatedRowsMap[id]) {
-                    updatedRowsMap[id] = {};
-                }
-                updatedRowsMap[id][field] = val;
-            });
+        async function saveRowChanges(id) {
+            const tag_id = document.getElementById('edit_tag_id').value.trim();
+            const bin = document.getElementById('edit_bin').value.trim();
+            const code = document.getElementById('edit_code').value.trim();
+            const wh = document.getElementById('edit_wh').value.trim();
+            const quality = Number(document.getElementById('edit_quality').value);
 
             try {
-                // Đẩy các thay đổi cập nhật lên cơ sở dữ liệu thật của Supabase
-                for (const id in updatedRowsMap) {
-                    const { error } = await supabaseClient
-                        .from('inventory')
-                        .update(updatedRowsMap[id])
-                        .eq('id', id);
-                    
-                    if (error) throw error;
-                }
+                // Đẩy thông tin cập nhật lên Supabase đối với duy nhất dòng được chọn
+                const { error } = await supabaseClient
+                    .from('inventory')
+                    .update({ tag_id, bin, code, wh, quality })
+                    .eq('id', id);
+                
+                if (error) throw error;
+
+                // Nhật ký ghi log lưu vết sự kiện sửa đổi
+                await logActivity('CHINH_SUA', tag_id, code, bin, wh, quality, `Sửa trực tiếp thông số bản ghi có ID: ${id}`);
 
                 isEditMode = false;
-                document.getElementById('btnToggleEdit').classList.remove('hidden');
-                document.getElementById('btnSaveBulk').classList.add('hidden');
-                document.getElementById('btnCancelBulk').classList.add('hidden');
-                
-                alert('Đã cập nhật thay đổi thành công lên cơ sở dữ liệu!');
-                await fetchFromSupabase(); // Đồng bộ lại dữ liệu mới từ máy chủ
+                editingRowId = null;
+                alert('Đã cập nhật dòng dữ liệu thành công!');
+                await fetchFromSupabase(); // Đồng bộ dữ liệu
             } catch (err) {
-                console.error("Lỗi cập nhật hàng loạt: ", err);
-                alert("Không thể lưu thay đổi: " + err.message);
+                console.error("Lỗi cập nhật dòng: ", err);
+                alert("Cập nhật dòng thất bại: " + err.message);
             }
         }
 
-        // --- 8. ĐÓNG MỞ CỬA SỔ NỔI ---
+        // --- 11. ĐÓNG MỞ CỬA SỔ NỔI ---
         function openModal(id) {
             const modal = document.getElementById(id);
             modal.classList.remove('hidden');
@@ -442,7 +556,7 @@
             }, 300);
         }
 
-        // --- 9. XỬ LÝ NHẬP KHO LÊN SUPABASE (INSERT) ---
+        // --- 12. XỬ LÝ NHẬP KHO LÊN SUPABASE (INSERT) & GHI LOG ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
             const tagId = document.getElementById('inboundTagId').value;
@@ -458,20 +572,35 @@
 
                 if (error) throw error;
 
+                // Ghi nhận hành động vào nhật ký hệ thống
+                await logActivity('NHAP_KHO', tagId, code, bin, wh, quality, 'Nhập dữ liệu kho mới thành công');
+
                 closeModal('inboundModal');
                 document.getElementById('inboundForm').reset();
                 alert('Đã thêm dữ liệu nhập kho vào cơ sở dữ liệu!');
-                await fetchFromSupabase(); // Tải lại danh sách
+                await fetchFromSupabase(); 
             } catch (err) {
                 console.error("Lỗi khi thêm mới dữ liệu: ", err);
                 alert("Nhập kho thất bại: " + err.message);
             }
         }
 
-        // --- 10. XỬ LÝ XUẤT KHO TRÊN SUPABASE (UPDATE / DELETE) ---
+        // --- 13. NÂNG CẤP CHẾ ĐỘ XUẤT KHO NÂNG CAO (WO, YÊU CẦU, TIÊU HAO) ---
+        function toggleOutboundModeField() {
+            const mode = document.getElementById('outboundMode').value;
+            const woField = document.getElementById('outboundWoField');
+            if (mode === "WO") {
+                woField.classList.remove('hidden');
+            } else {
+                woField.classList.add('hidden');
+            }
+        }
+
         async function handleOutboundSubmit(e) {
             e.preventDefault();
-            const tagId = document.getElementById('outboundTagId').value;
+            const mode = document.getElementById('outboundMode').value;
+            const woValue = document.getElementById('outboundWoValue').value.trim();
+            const tagId = document.getElementById('outboundTagId').value.trim();
             const qtyStr = document.getElementById('outboundQty').value;
             const qtyToReduce = qtyStr ? Number(qtyStr) : null;
 
@@ -492,33 +621,166 @@
                 const currentItem = data[0];
                 const currentQty = Number(currentItem.quality || 0);
 
+                let logActionType = '';
+                let logDetails = '';
+
+                // Xác định thông tin mô tả chi tiết cho từng loại hình Log ghi nhận
+                if (mode === "WO") {
+                    if (!woValue) {
+                        alert("Vui lòng điền mã lệnh WO!");
+                        return;
+                    }
+                    logActionType = 'XUAT_WO';
+                    logDetails = `Số WO: ${woValue}`;
+                } else if (mode === "YEU_CAU") {
+                    logActionType = 'XUAT_YEU_CAU';
+                    logDetails = 'Hoạt động phát yêu cầu phòng ban sản xuất';
+                } else {
+                    logActionType = 'XUAT_TIEU_HAO';
+                    logDetails = 'Phát xuất vật liệu tiêu hao';
+                }
+
                 if (qtyToReduce === null || qtyToReduce >= currentQty) {
-                    // Xuất hết -> tiến hành xóa dòng khỏi bảng
+                    // PHƯƠNG PHÁP XUẤT HẾT: Tiến hành xóa hẳn dòng trong bảng
                     const { error: deleteError } = await supabaseClient
                         .from('inventory')
                         .delete()
                         .eq('tag_id', tagId);
                     
                     if (deleteError) throw deleteError;
-                    alert(`Đã xuất và loại bỏ hoàn toàn thẻ ${tagId} ra khỏi kho.`);
+
+                    // Ghi Log hệ thống
+                    await logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, currentQty, logDetails + ' (Xuất hết)');
+                    alert(`Đã xuất toàn bộ mã tag ${tagId} ra khỏi kho.`);
                 } else {
-                    // Xuất bớt -> giảm số lượng cột quality
+                    // PHƯƠNG PHÁP XUẤT 1 PHẦN: Giảm số lượng quality
                     const { error: updateError } = await supabaseClient
                         .from('inventory')
                         .update({ quality: currentQty - qtyToReduce })
                         .eq('tag_id', tagId);
 
                     if (updateError) throw updateError;
-                    alert(`Đã giảm ${qtyToReduce} sản phẩm thuộc thẻ ${tagId}.`);
+
+                    // Ghi Log hệ thống
+                    await logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, qtyToReduce, logDetails + ` (Xuất 1 phần - giảm ${qtyToReduce})`);
+                    alert(`Đã xuất và trừ đi ${qtyToReduce} sản phẩm thuộc thẻ ${tagId}.`);
                 }
 
                 closeModal('outboundModal');
                 document.getElementById('outboundForm').reset();
-                await fetchFromSupabase(); // Đồng bộ lại dữ liệu
+                await fetchFromSupabase(); 
             } catch (err) {
                 console.error("Lỗi thực thi quy trình xuất kho: ", err);
                 alert("Xuất kho thất bại: " + err.message);
             }
+        }
+
+        // --- 14. THUẬT TOÁN THÊM NHANH BẰNG CSV (PARSING & BULK INSERT) ---
+        function handleCSVFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('csvTextArea').value = e.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        async function processCSVImport() {
+            const rawText = document.getElementById('csvTextArea').value.trim();
+            if (!rawText) {
+                alert("Vui lòng dán văn bản CSV hoặc chọn tệp .csv!");
+                return;
+            }
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
+            if (lines.length < 2) {
+                alert("Nội dung CSV không đầy đủ hoặc thiếu dòng dữ liệu!");
+                return;
+            }
+
+            // Chuyển hàng tiêu đề để so khớp các cột
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            
+            const requiredFields = ['tag_id', 'bin', 'code', 'wh', 'quality'];
+            const missingFields = requiredFields.filter(f => !headers.includes(f));
+            if (missingFields.length > 0) {
+                alert(`Dữ liệu CSV thiếu các trường cột tiêu đề: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            const payload = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                if (values.length !== headers.length) continue; // Bỏ qua dòng lỗi cấu trúc cột
+
+                const rowObj = {};
+                headers.forEach((header, idx) => {
+                    rowObj[header] = values[idx];
+                });
+
+                payload.push({
+                    tag_id: rowObj.tag_id,
+                    bin: rowObj.bin,
+                    code: rowObj.code,
+                    wh: rowObj.wh,
+                    quality: Number(rowObj.quality || 0)
+                });
+            }
+
+            if (payload.length === 0) {
+                alert("Không thể phân tích dữ liệu CSV, vui lòng thử lại!");
+                return;
+            }
+
+            try {
+                // Tiến hành bulk insert hàng loạt dòng dữ liệu vào cơ sở dữ liệu Supabase
+                const { error } = await supabaseClient
+                    .from('inventory')
+                    .insert(payload);
+
+                if (error) throw error;
+
+                // Ghi nhận nhật ký sự kiện log import hàng loạt
+                await logActivity('IMPORT_CSV', `Số dòng: ${payload.length}`, 'NHIỀU_CODE', 'NHIỀU_BIN', 'NHIỀU_WH', 0, `Nhập nhanh hàng loạt từ tệp CSV.`);
+
+                closeModal('csvImportModal');
+                document.getElementById('csvTextArea').value = '';
+                alert(`Nhập thành công ${payload.length} dòng dữ liệu từ CSV vào hệ thống!`);
+                await fetchFromSupabase();
+            } catch (err) {
+                console.error("Lỗi import CSV: ", err);
+                alert("Quy trình nhập CSV thất bại: " + err.message);
+            }
+        }
+
+        // --- 15. THUẬT TOÁN XUẤT FILE EXCEL.XLSX ĐÚNG ĐỊNH DẠNG DATABASE ---
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                alert("Không có dữ liệu hiện hành trong bảng lọc để xuất!");
+                return;
+            }
+
+            // Bản đồ hóa các bản ghi theo đúng định dạng cột database
+            const excelRows = filteredData.map(item => ({
+                id: item.id,
+                created_at: item.created_at,
+                tag_id: item.tag_id,
+                bin: item.bin,
+                code: item.code,
+                wh: item.wh,
+                quality: Number(item.quality || 0)
+            }));
+
+            // Sử dụng thư viện SheetJS thiết lập dữ liệu
+            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "InventoryData");
+
+            // Tạo file thực tế tải về máy người dùng
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `BaoCao_Tonton_${dateStr}.xlsx`);
         }
     </script>
 </body>
