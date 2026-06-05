@@ -115,7 +115,7 @@
             </div>
         </div>
 
-        <!-- Data Table Section -->
+        <!-- Data Table Section (Bảng tồn kho chính) -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
                 <h4 class="font-bold text-slate-700 flex items-center">
@@ -148,6 +148,39 @@
                     </thead>
                     <tbody id="inventoryTableBody" class="divide-y divide-slate-200 text-sm">
                         <!-- JS renders rows here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== NÂNG CẤP: BẢNG HIỂN THỊ DỮ LIỆU TABLE GHILOG ==================== -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
+                <h4 class="font-bold flex items-center text-sm tracking-wide">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-400 mr-2"></i> NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG (TABLE GHILOG)
+                </h4>
+                <button onclick="fetchLogsFromSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1 border border-slate-700 transition duration-150">
+                    <i class="fa-solid fa-arrows-rotate"></i> <span>Làm mới log</span>
+                </button>
+            </div>
+            <div class="overflow-x-auto max-h-[400px]">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
+                            <th class="py-3 px-4">Log ID</th>
+                            <th class="py-3 px-4">Thời gian tạo</th>
+                            <th class="py-3 px-4">Người thực hiện</th>
+                            <th class="py-3 px-4">Loại hoạt động</th>
+                            <th class="py-3 px-4">Tag ID</th>
+                            <th class="py-3 px-4">Mã hàng (Code)</th>
+                            <th class="py-3 px-4">Vị trí (Bin)</th>
+                            <th class="py-3 px-4">Kho (WH)</th>
+                            <th class="py-3 px-4 text-right">Số lượng</th>
+                            <th class="py-3 px-4">Chi tiết / Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
+                        <!-- JS renders logs here -->
                     </tbody>
                 </table>
             </div>
@@ -281,8 +314,9 @@
         
         let inventoryData = [];
         let filteredData = [];
+        let logData = [];           // NÂNG CẤP: Lưu trữ mảng nhật ký ghilog
         let currentRole = "Admin"; 
-        let isEditMode = false;     // Khai báo lại biến isEditMode bị thiếu
+        let isEditMode = false;     
         let editingRowId = null;  
 
         // --- 2. ĐỒNG BỘ DỮ LIỆU TỪ SUPABASE ---
@@ -310,9 +344,26 @@
             }
         }
 
+        // --- NÂNG CẤP: LẤY DỮ LIỆU NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
+        async function fetchLogsFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('ghilog')
+                    .select('*')
+                    .order('id', { ascending: false }); // Bản ghi mới nhất hiển thị trên đầu
+                
+                if (error) throw error;
+                logData = data || [];
+                renderLogsTable();
+            } catch (err) {
+                console.error("Lỗi đồng bộ dữ liệu ghilog: ", err);
+            }
+        }
+
         // --- Khởi tạo ứng dụng ---
         window.addEventListener('DOMContentLoaded', async () => {
             await fetchFromSupabase();
+            await fetchLogsFromSupabase(); // Đồng bộ bảng Log ngay khi tải trang
             applyRolePermissions();
         });
 
@@ -366,9 +417,30 @@
                         quality: quality,
                         details: details
                     }]);
-                if (error) console.error("Lỗi khi ghi nhận lịch sử Log: ", error.message);
+                if (error) throw error;
+                await fetchLogsFromSupabase(); // Làm mới tức thời bảng hiển thị Log ở dưới
             } catch (err) {
-                console.error("Lỗi luồng ghi Log: ", err);
+                console.error("Lỗi luồng ghi Log: ", err.message);
+            }
+        }
+
+        // --- NÂNG CẤP: PHÂN LOẠI BADGE MÀU TRỰC QUAN CHO LOẠI HOẠT ĐỘNG (ACTION_TYPE) ---
+        function getActionBadge(action) {
+            switch(action) {
+                case 'NHAP_KHO':
+                    return '<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-arrow-down-long mr-1"></i>Nhập Kho</span>';
+                case 'XUAT_WO':
+                    return '<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-industry mr-1"></i>Xuất WO</span>';
+                case 'XUAT_YEU_CAU':
+                    return '<span class="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-file-signature mr-1"></i>Xuất Yêu Cầu</span>';
+                case 'XUAT_TIEU_HAO':
+                    return '<span class="bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-wrench mr-1"></i>Vật liệu tiêu hao</span>';
+                case 'CHINH_SUA':
+                    return '<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-pen-to-square mr-1"></i>Chỉnh Sửa</span>';
+                case 'IMPORT_CSV':
+                    return '<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-md font-semibold text-xs inline-flex items-center"><i class="fa-solid fa-file-csv mr-1"></i>Import CSV</span>';
+                default:
+                    return `<span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs font-semibold">${action}</span>`;
             }
         }
 
@@ -466,6 +538,36 @@
                 }
                 tbody.appendChild(tr);
             });
+        }
+
+        // --- NÂNG CẤP: RENDER BẢNG NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
+        function renderLogsTable() {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '';
+
+            logData.forEach((log) => {
+                const dateFormatted = new Date(log.created_at).toLocaleString('vi-VN');
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition duration-150";
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold font-mono text-slate-500">${log.id}</td>
+                    <td class="py-3 px-4 text-slate-500 whitespace-nowrap">${dateFormatted}</td>
+                    <td class="py-3 px-4 font-bold text-indigo-600">${log.username || 'System'}</td>
+                    <td class="py-3 px-4 whitespace-nowrap">${getActionBadge(log.action_type)}</td>
+                    <td class="py-3 px-4 font-mono font-semibold text-slate-800">${log.tag_id || ''}</td>
+                    <td class="py-3 px-4 font-medium text-slate-600">${log.code || ''}</td>
+                    <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs">${log.bin || ''}</span></td>
+                    <td class="py-3 px-4 text-slate-500">${log.wh || ''}</td>
+                    <td class="py-3 px-4 text-right font-bold text-slate-900">${log.quality ? Number(log.quality).toLocaleString('vi-VN') : ''}</td>
+                    <td class="py-3 px-4 text-slate-500 max-w-xs truncate" title="${log.details || ''}">${log.details || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (logData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="py-4 text-center text-slate-400">Không có nhật ký hoạt động nào</td></tr>`;
+            }
         }
 
         // --- 9. BỘ LỌC THÔNG MINH GỘP CHUNG ---
