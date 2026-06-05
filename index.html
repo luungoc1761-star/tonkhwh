@@ -6,7 +6,7 @@
     <title>Quản lý Vị trí Tồn kho</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (Thư viện xuất file Excel.xlsx chuẩn cấu trúc) -->
+    <!-- SheetJS (Thư viện xuất file Excel.xlsx chuẩn cấu trúc nhiều Sheet) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -153,7 +153,7 @@
             </div>
         </div>
 
-        <!-- ==================== NÂNG CẤP: BẢNG HIỂN THỊ DỮ LIỆU TABLE GHILOG ==================== -->
+        <!-- BẢNG HIỂN THỊ DỮ LIỆU TABLE GHILOG -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
                 <h4 class="font-bold flex items-center text-sm tracking-wide">
@@ -314,7 +314,7 @@
         
         let inventoryData = [];
         let filteredData = [];
-        let logData = [];           // NÂNG CẤP: Lưu trữ mảng nhật ký ghilog
+        let logData = [];           
         let currentRole = "Admin"; 
         let isEditMode = false;     
         let editingRowId = null;  
@@ -344,13 +344,13 @@
             }
         }
 
-        // --- NÂNG CẤP: LẤY DỮ LIỆU NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
+        // --- LẤY DỮ LIỆU NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
         async function fetchLogsFromSupabase() {
             try {
                 const { data, error } = await supabaseClient
                     .from('ghilog')
                     .select('*')
-                    .order('id', { ascending: false }); // Bản ghi mới nhất hiển thị trên đầu
+                    .order('id', { ascending: false }); 
                 
                 if (error) throw error;
                 logData = data || [];
@@ -363,7 +363,7 @@
         // --- Khởi tạo ứng dụng ---
         window.addEventListener('DOMContentLoaded', async () => {
             await fetchFromSupabase();
-            await fetchLogsFromSupabase(); // Đồng bộ bảng Log ngay khi tải trang
+            await fetchLogsFromSupabase(); 
             applyRolePermissions();
         });
 
@@ -418,13 +418,13 @@
                         details: details
                     }]);
                 if (error) throw error;
-                await fetchLogsFromSupabase(); // Làm mới tức thời bảng hiển thị Log ở dưới
+                await fetchLogsFromSupabase(); 
             } catch (err) {
                 console.error("Lỗi luồng ghi Log: ", err.message);
             }
         }
 
-        // --- NÂNG CẤP: PHÂN LOẠI BADGE MÀU TRỰC QUAN CHO LOẠI HOẠT ĐỘNG (ACTION_TYPE) ---
+        // --- PHÂN LOẠI BADGE MÀU CHO LOẠI HOẠT ĐỘNG (ACTION_TYPE) ---
         function getActionBadge(action) {
             switch(action) {
                 case 'NHAP_KHO':
@@ -540,7 +540,7 @@
             });
         }
 
-        // --- NÂNG CẤP: RENDER BẢNG NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
+        // --- RENDER BẢNG NHẬT KÝ HOẠT ĐỘNG (TABLE GHILOG) ---
         function renderLogsTable() {
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = '';
@@ -835,29 +835,48 @@
             }
         }
 
-        // --- 15. THUẬT TOÁN XUẤT FILE EXCEL.XLSX ---
+        // --- 15. NÂNG CẤP THUẬT TOÁN XUẤT FILE EXCEL.XLSX ĐA SHEET ---
         function exportToExcel() {
             if (filteredData.length === 0) {
-                alert("Không có dữ liệu hiện hành trong bảng lọc để xuất!");
+                alert("Không có dữ liệu tồn kho hiện hành để xuất!");
                 return;
             }
 
-            const excelRows = filteredData.map(item => ({
-                id: item.id,
-                created_at: item.created_at,
-                tag_id: item.tag_id,
-                bin: item.bin,
-                code: item.code,
-                wh: item.wh,
-                quality: Number(item.quality || 0)
-            }));
-
-            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+            // Tạo một Workbook trống mới
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "InventoryData");
 
+            // 1. Chuẩn bị và ánh xạ dữ liệu cho SHEET 1: Dữ liệu tồn kho
+            const inventoryRows = filteredData.map(item => ({
+                "ID": item.id,
+                "Ngày Tạo (Created At)": item.created_at,
+                "Tag ID": item.tag_id,
+                "Vị trí (Bin)": item.bin,
+                "Mã hàng (Code)": item.code,
+                "Kho (WH)": item.wh,
+                "Sản lượng (Quality)": Number(item.quality || 0)
+            }));
+            const wsInventory = XLSX.utils.json_to_sheet(inventoryRows);
+            XLSX.utils.book_append_sheet(workbook, wsInventory, "Dữ liệu tồn kho");
+
+            // 2. Chuẩn bị và ánh xạ dữ liệu cho SHEET 2: Nhật ký hoạt động (ghilog)
+            const logRows = logData.map(log => ({
+                "Log ID": log.id,
+                "Thời gian tạo": log.created_at,
+                "Người thực hiện": log.username || 'System',
+                "Loại hoạt động": log.action_type,
+                "Tag ID": log.tag_id,
+                "Mã hàng (Code)": log.code,
+                "Vị trí (Bin)": log.bin,
+                "Kho (WH)": log.wh,
+                "Số lượng": log.quality ? Number(log.quality) : '',
+                "Chi tiết / Ghi chú": log.details || ''
+            }));
+            const wsLogs = XLSX.utils.json_to_sheet(logRows);
+            XLSX.utils.book_append_sheet(workbook, wsLogs, "Nhật ký hoạt động");
+
+            // 3. Tiến hành xuất file lưu về máy
             const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(workbook, `BaoCao_Tonton_${dateStr}.xlsx`);
+            XLSX.writeFile(workbook, `BaoCao_TongHop_${dateStr}.xlsx`);
         }
     </script>
 </body>
