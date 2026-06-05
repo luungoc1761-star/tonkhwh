@@ -67,53 +67,70 @@
 
     <main class="p-6 max-w-7xl mx-auto space-y-6">
 
-        <!-- KPI Summary Cards & Zoom/Pan Chart Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Summary Stats -->
-            <div class="space-y-4 col-span-1">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Tổng số dòng dữ liệu thực tế</p>
-                        <h3 id="statTotalRows" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                    </div>
-                    <div class="bg-blue-100 p-3 rounded-lg text-blue-600">
-                        <i class="fa-solid fa-list-check text-xl"></i>
-                    </div>
+        <!-- KPI Summary Cards (Bổ sung 2 Thẻ phân tích Metric chênh lệch và Số lượng chênh lệch) -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Dòng Thực Tế</p>
+                    <h3 id="statTotalRows" class="text-xl font-bold text-slate-800 mt-1">0</h3>
                 </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Tổng sản lượng thực tế (Quality)</p>
-                        <h3 id="statTotalQuality" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                    </div>
-                    <div class="bg-emerald-100 p-3 rounded-lg text-emerald-600">
-                        <i class="fa-solid fa-cubes text-xl"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Số mã hàng thực tế (Code)</p>
-                        <h3 id="statUniqueCodes" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                    </div>
-                    <div class="bg-amber-100 p-3 rounded-lg text-amber-600">
-                        <i class="fa-solid fa-barcode text-xl"></i>
-                    </div>
+                <div class="bg-blue-50 p-2.5 rounded-lg text-blue-600 text-sm">
+                    <i class="fa-solid fa-list-check"></i>
                 </div>
             </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Lượng Thực Tế</p>
+                    <h3 id="statTotalQuality" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="bg-emerald-50 p-2.5 rounded-lg text-emerald-600 text-sm">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Mã Hàng Thực Tế</p>
+                    <h3 id="statUniqueCodes" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="bg-amber-50 p-2.5 rounded-lg text-amber-600 text-sm">
+                    <i class="fa-solid fa-barcode"></i>
+                </div>
+            </div>
+            <!-- KPI 4: Số mã lệch (Metric chênh lệch) -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium font-semibold text-rose-600">Mã hàng bị lệch</p>
+                    <h3 id="statVarianceCodes" class="text-xl font-bold text-rose-600 mt-1">0</h3>
+                </div>
+                <div class="bg-rose-50 p-2.5 rounded-lg text-rose-600 text-sm border border-rose-100">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+            <!-- KPI 5: Tổng lượng chênh lệch (Số lượng chênh lệch) -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-medium font-semibold text-orange-600">Tổng lượng lệch</p>
+                    <h3 id="statTotalVariance" class="text-xl font-bold text-orange-600 mt-1">0</h3>
+                </div>
+                <div class="bg-orange-50 p-2.5 rounded-lg text-orange-600 text-sm border border-orange-100">
+                    <i class="fa-solid fa-scale-unbalanced"></i>
+                </div>
+            </div>
+        </div>
 
-            <!-- Khung biểu đồ cột đứng tích hợp Zoom & Panning bằng CSS/JS -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2 flex flex-col h-[282px] relative">
-                <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    <span><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Đối chiếu Thực Tế - Hệ Thống & Linetrend Chênh Lệch</span>
-                    <button onclick="resetZoomAndPan()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 transition duration-150">
-                        <i class="fa-solid fa-arrows-rotate mr-1"></i>Reset Khung
-                    </button>
-                </h4>
-                
-                <!-- Thẻ CSS tương tác Zoom & Pan -->
-                <div id="interactiveCard" class="interactive-card flex-1 border border-slate-100 rounded-lg bg-slate-50/50">
-                    <div id="zoomPanContent" class="zoom-pan-content h-full w-full p-2">
-                        <canvas id="comparisonChart"></canvas>
-                    </div>
+        <!-- Khung biểu đồ đứng tích hợp Zoom & Panning bằng CSS/JS -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[320px] relative">
+            <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between">
+                <span><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Đối chiếu Thực Tế - Hệ Thống & Linetrend Chênh Lệch</span>
+                <button onclick="resetZoomAndPan()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 transition duration-150">
+                    <i class="fa-solid fa-arrows-rotate mr-1"></i>Reset Khung
+                </button>
+            </h4>
+            
+            <!-- Thẻ CSS tương tác Zoom & Pan -->
+            <div id="interactiveCard" class="interactive-card flex-1 border border-slate-100 rounded-lg bg-slate-50/50">
+                <div id="zoomPanContent" class="zoom-pan-content h-full w-full p-2">
+                    <canvas id="comparisonChart"></canvas>
                 </div>
             </div>
         </div>
@@ -123,7 +140,7 @@
             <h4 class="font-bold text-slate-700 mb-3 flex items-center">
                 <i class="fa-solid fa-arrows-to-dot text-indigo-500 mr-2"></i>Bảng Phân Tích Pivot Đối Chiếu Sản Lượng Theo Mã Hàng (Stock Code)
             </h4>
-            <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-[250px]">
+            <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-[300px]">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead class="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0 border-b border-slate-200 z-10">
                         <tr>
@@ -385,8 +402,9 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let inventoryData = [];
-        let systemInventoryData = []; // Mảng lưu trữ File Nguồn Hệ Thống
-        let filteredData = [];
+        let systemInventoryData = []; 
+        let filteredData = [];       // Thực tế đã lọc
+        let filteredSystemData = []; // NÂNG CẤP: Hệ thống đã lọc đồng bộ [2]
         let logData = [];           
         let currentRole = "Admin"; 
         let isEditMode = false;     
@@ -404,9 +422,9 @@
             e.preventDefault();
             const zoomFactor = 0.08;
             if (e.deltaY < 0) {
-                scale = Math.min(scale + zoomFactor, 3.5); // Giới hạn phóng to 3.5x
+                scale = Math.min(scale + zoomFactor, 3.5); 
             } else {
-                scale = Math.max(scale - zoomFactor, 0.5); // Giới hạn thu nhỏ 0.5x
+                scale = Math.max(scale - zoomFactor, 0.5); 
             }
             applyZoomPan();
         });
@@ -460,12 +478,14 @@
                 if (sysErr) throw sysErr;
                 systemInventoryData = sysData || [];
 
+                // Đồng bộ bộ lọc khởi tạo ban đầu
                 filteredData = [...inventoryData];
+                filteredSystemData = [...systemInventoryData]; // Khởi tạo mảng lọc hệ thống
                 
                 renderTable();
                 updateStats();
                 updatePivotTable();
-                updateChart(); // Vẽ biểu đồ so sánh kèm linetrend
+                updateChart(); 
                 updateCodeSuggestions();
             } catch (err) {
                 console.error("Lỗi đồng bộ dữ liệu Supabase: ", err);
@@ -576,17 +596,48 @@
             }
         }
 
-        // --- 5. CẬP NHẬT STATS ---
+        // --- NÂNG CẤP: CẬP NHẬT STATS (Tính toán đồng bộ 5 Thẻ KPI bao gồm Số mã lệch & Lượng lệch) ---
         function updateStats() {
+            // 3 thẻ KPI cơ bản
             document.getElementById('statTotalRows').innerText = filteredData.length;
             const totalQuality = filteredData.reduce((acc, curr) => acc + Number(curr.quality || 0), 0);
             document.getElementById('statTotalQuality').innerText = totalQuality.toLocaleString('vi-VN');
-            
             const uniqueCodes = [...new Set(filteredData.map(item => item.code))].length;
             document.getElementById('statUniqueCodes').innerText = uniqueCodes;
+
+            // Tính toán Metrics chênh lệch cho 2 thẻ KPI mới dựa trên dữ liệu đã LỌC đồng bộ [2]
+            const actualGrouped = {};
+            filteredData.forEach(item => {
+                actualGrouped[item.code] = (actualGrouped[item.code] || 0) + Number(item.quality || 0);
+            });
+
+            const systemGrouped = {};
+            filteredSystemData.forEach(item => {
+                systemGrouped[item.code] = (systemGrouped[item.code] || 0) + Number(item.quality || 0);
+            });
+
+            const allCodes = Array.from(new Set([
+                ...Object.keys(actualGrouped),
+                ...Object.keys(systemGrouped)
+            ]));
+
+            let varianceCodeCount = 0;   // Thẻ số mã hàng bị lệch
+            let totalVarianceQty = 0;    // Thẻ tổng lượng sản phẩm chênh lệch
+
+            allCodes.forEach(code => {
+                const actVal = actualGrouped[code] || 0;
+                const sysVal = systemGrouped[code] || 0;
+                if (actVal !== sysVal) {
+                    varianceCodeCount++;
+                    totalVarianceQty += Math.abs(actVal - sysVal);
+                }
+            });
+
+            document.getElementById('statVarianceCodes').innerText = varianceCodeCount;
+            document.getElementById('statTotalVariance').innerText = totalVarianceQty.toLocaleString('vi-VN');
         }
 
-        // --- 6. BIỂU ĐỒ CỘT ĐỨNG & ĐƯỜNG TREND (DỮ LIỆU ĐỐI CHIẾU CHÊNH LỆCH) ---
+        // --- NÂNG CẤP: KHỞI TẠO BIỂU ĐỒ ĐỘNG CÓ ANIMATION MƯỢT MÀ ---
         function initChart() {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
             mainChart = new Chart(ctx, {
@@ -618,7 +669,7 @@
                             type: 'line',
                             label: 'Chênh Lệch (Actual - System)',
                             data: [],
-                            borderColor: 'rgba(239, 68, 68, 1)', // Đường trend đỏ rực
+                            borderColor: 'rgba(239, 68, 68, 1)', // Đường trend đỏ
                             backgroundColor: 'rgba(239, 68, 68, 0.05)',
                             borderWidth: 2,
                             tension: 0.25,
@@ -630,6 +681,11 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    // Animation động mượt mà khi lọc và đồng bộ dữ liệu
+                    animation: {
+                        duration: 800,
+                        easing: 'easeOutQuart'
+                    },
                     plugins: {
                         legend: { position: 'top', labels: { boxWidth: 12, font: { size: 9 } } }
                     },
@@ -645,7 +701,7 @@
                             type: 'linear',
                             display: true,
                             position: 'right',
-                            grid: { drawOnChartArea: false }, // Không vẽ lưới đè lên trục chính
+                            grid: { drawOnChartArea: false }, 
                             title: { display: true, text: 'Hiệu số chênh lệch', font: { size: 9 } }
                         }
                     }
@@ -653,22 +709,21 @@
             });
         }
 
+        // --- NÂNG CẤP: VẼ BIỂU ĐỒ ĐỒNG BỘ THEO DỮ LIỆU ĐÃ LỌC ---
         function updateChart() {
             if (!mainChart) return;
 
-            // Nhóm gom sản lượng theo Code từ dữ liệu Thực Tế
+            // Lấy dữ liệu đã lọc đồng bộ [2]
             const actualGrouped = {};
             filteredData.forEach(item => {
                 actualGrouped[item.code] = (actualGrouped[item.code] || 0) + Number(item.quality || 0);
             });
 
-            // Nhóm gom sản lượng theo Code từ dữ liệu Hệ Thống
             const systemGrouped = {};
-            systemInventoryData.forEach(item => {
+            filteredSystemData.forEach(item => {
                 systemGrouped[item.code] = (systemGrouped[item.code] || 0) + Number(item.quality || 0);
             });
 
-            // Lấy danh sách tất cả các Code gộp của hai bên
             const allCodes = Array.from(new Set([
                 ...Object.keys(actualGrouped),
                 ...Object.keys(systemGrouped)
@@ -682,21 +737,22 @@
             mainChart.data.datasets[0].data = actualDataset;
             mainChart.data.datasets[1].data = systemDataset;
             mainChart.data.datasets[2].data = varianceDataset;
-            mainChart.update();
+            mainChart.update(); // Gọi update() để kích hoạt Animation động mượt mà
         }
 
-        // --- 7. CẬP NHẬT BẢNG PIVOT ĐỐI CHIẾU ---
+        // --- NÂNG CẤP: ĐỒNG BỘ BẢNG PIVOT ĐỐI CHIẾU VỚI THANH FILTER ---
         function updatePivotTable() {
             const pivotBody = document.getElementById('pivotTableBody');
             pivotBody.innerHTML = '';
 
+            // Sử dụng dữ liệu đã lọc đồng bộ [2]
             const actualGrouped = {};
             filteredData.forEach(item => {
                 actualGrouped[item.code] = (actualGrouped[item.code] || 0) + Number(item.quality || 0);
             });
 
             const systemGrouped = {};
-            systemInventoryData.forEach(item => {
+            filteredSystemData.forEach(item => {
                 systemGrouped[item.code] = (systemGrouped[item.code] || 0) + Number(item.quality || 0);
             });
 
@@ -713,11 +769,11 @@
 
                 let statusBadge = '';
                 if (variance === 0) {
-                    statusBadge = '<span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">Khớp</span>';
+                    statusBadge = '<span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">Khớp</span>';
                 } else if (variance > 0) {
-                    statusBadge = '<span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">Dư Thực Tế</span>';
+                    statusBadge = '<span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200 text-[10px]">Dư Thực Tế</span>';
                 } else {
-                    statusBadge = '<span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded border border-rose-200">Thiếu hụt</span>';
+                    statusBadge = '<span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded border border-rose-200 text-[10px]">Thiếu hụt</span>';
                 }
 
                 const tr = document.createElement('tr');
@@ -829,11 +885,21 @@
             }
         }
 
-        // --- 9. BỘ LỌC THÔNG MINH GỘP CHUNG ---
+        // --- NÂNG CẤP: ĐỒNG BỘ BỘ LỌC THÔNG MINH CHO CẢ 2 BẢNG THỰC TẾ & HỆ THỐNG ---
         function applyFilters() {
             const query = document.getElementById('smartFilter').value.toLowerCase().trim();
 
+            // Lọc dữ liệu Thực tế
             filteredData = inventoryData.filter(item => {
+                const matchCode = (item.code || '').toLowerCase().includes(query);
+                const matchBin = (item.bin || '').toLowerCase().includes(query);
+                const matchWH = (item.wh || '').toLowerCase().includes(query);
+                const matchTag = (item.tag_id || '').toLowerCase().includes(query);
+                return matchCode || matchBin || matchWH || matchTag;
+            });
+
+            // Lọc dữ liệu Hệ thống đồng bộ [2]
+            filteredSystemData = systemInventoryData.filter(item => {
                 const matchCode = (item.code || '').toLowerCase().includes(query);
                 const matchBin = (item.bin || '').toLowerCase().includes(query);
                 const matchWH = (item.wh || '').toLowerCase().includes(query);
@@ -844,7 +910,7 @@
             renderTable();
             updateStats();
             updatePivotTable();
-            updateChart();
+            updateChart(); 
         }
 
         // --- 10. ĐIỀU KHIỂN CHỈNH SỬA THEO TỪNG DÒNG ---
@@ -1084,7 +1150,7 @@
             }
         }
 
-        // --- THUẬT TOÁN NHẬP FILE HỆ THỐNG (MÃ NGUỒN CSV) ---
+        // --- NÂNG CẤP: NHẬP FILE HỆ THỐNG VỚI PHƯƠNG PHÁP LẤY DỮ LIỆU CUỐI CÙNG ---
         function handleSystemCSVFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1109,15 +1175,13 @@
                 return;
             }
 
-            // Nhận diện cột linh hoạt (hỗ trợ viết hoa viết thường, có khoảng trắng)
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
 
-            // Đặt các mảng khóa từ khóa đồng nghĩa để lọc cấu trúc tệp
             const stockCodeKeys = ['stock code', 'stock_code', 'code', 'mã hàng'];
             const warehouseKeys = ['warehouse', 'wh', 'kho'];
             const batchKeys = ['batch', 'tag_id', 'tagid', 'mã tag'];
             const binKeys = ['bin', 'vị trí'];
-            const qtyKeys = ['qty', 'quality', 'số lượng', 'so luong'];
+            const qtyKeys = ['qty', 'quality', 'số lượng', 'so luong', 'qty'];
 
             let codeIdx = headers.findIndex(h => stockCodeKeys.includes(h));
             let whIdx = headers.findIndex(h => warehouseKeys.includes(h));
@@ -1130,31 +1194,39 @@
                 return;
             }
 
-            const payload = [];
+            // NÂNG CẤP: Thuật toán lọc trùng và lấy bản ghi cuối cùng (Deduplication) [2]
+            const latestRecordsMap = {};
+
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
                 if (values.length !== headers.length) continue;
 
-                payload.push({
+                const batchTagId = values[tagIdx];
+                const record = {
                     code: values[codeIdx],
                     wh: values[whIdx],
-                    tag_id: values[tagIdx],
+                    tag_id: batchTagId,
                     bin: binIdx !== -1 ? values[binIdx] : '',
                     quality: Number(values[qtyIdx] || 0)
-                });
+                };
+
+                // Đè giá trị cũ bằng giá trị sau cùng trong file tệp để lấy dữ liệu cuối cùng [2]
+                latestRecordsMap[batchTagId] = record;
             }
 
+            const payload = Object.values(latestRecordsMap); // Lấy mảng dữ liệu cuối cùng sạch nhất [2]
+
             try {
-                // Xóa dữ liệu cũ của tệp nguồn hệ thống trước khi nạp tệp nguồn mới
+                // Xóa sạch bảng hệ thống nguồn cũ
                 await supabaseClient.from('system_inventory').delete().not('id', 'is', null);
 
-                // Nạp tệp nguồn mới
+                // Nạp tệp nguồn mới đã lọc trùng
                 const { error } = await supabaseClient.from('system_inventory').insert(payload);
                 if (error) throw error;
 
-                await logActivity('IMPORT_CSV', `Số dòng: ${payload.length}`, 'NHIỀU_CODE', 'NHIỀU_BIN', 'NHIỀU_WH', 0, `Nạp file nguồn hệ thống CSV mới.`);
+                await logActivity('IMPORT_CSV', `Số dòng: ${payload.length}`, 'NHIỀU_CODE', 'NHIỀU_BIN', 'NHIỀU_WH', 0, `Nạp file nguồn hệ thống (Lấy dòng cuối).`);
                 closeModal('systemCsvModal');
-                alert(`Đã nạp thành công ${payload.length} bản ghi nguồn hệ thống!`);
+                alert(`Đã nạp thành công ${payload.length} bản ghi nguồn hệ thống sạch (đã đồng bộ lọc trùng)!`);
                 await fetchFromSupabase();
             } catch (err) {
                 console.error(err);
