@@ -213,7 +213,7 @@
                             <th class="py-3.5 px-6">Vị trí (Bin)</th>
                             <th class="py-3.5 px-6">Mã hàng (Code)</th>
                             <th class="py-3.5 px-6">Kho (WH)</th>
-                            <th class="py-3.5 px-6 text-right">Sản lượng (Quality)</th>
+                            <th class="py-3.5 px-6 text-right">Số lượng (Quality)</th>
                             <th class="py-3.5 px-6 text-center" id="colActionHeader">Hành động</th>
                         </tr>
                     </thead>
@@ -321,27 +321,37 @@
                 <button onclick="closeModal('inboundModal')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-4 sm:p-6 space-y-4 overflow-y-auto">
+                <!-- Thanh trạng thái thông báo không chặn (thay thế alert) -->
+                <div id="inboundStatusMessage" class="hidden py-2 rounded-lg text-xs font-semibold text-center transition duration-200"></div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-slate-600 mb-1">Tag ID</label>
-                        <input type="text" required id="inboundTagId" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <!-- Tắt gợi ý trình duyệt autocomplete="off" để tránh che mắt -->
+                        <input type="text" required id="inboundTagId" autocomplete="off" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Bin (Vị trí)</label>
-                        <input type="text" required id="inboundBin" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <!-- Chỉ gợi ý thông qua datalist tùy biến -->
+                        <input type="text" required id="inboundBin" list="binSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <datalist id="binSuggestions"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Code (Mã hàng)</label>
+                        <!-- Chỉ gợi ý thông qua datalist tùy biến -->
                         <input type="text" required id="inboundCode" list="codeSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                         <datalist id="codeSuggestions"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">WH (Kho)</label>
-                        <input type="text" required id="inboundWH" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <!-- Chỉ gợi ý thông qua datalist tùy biến -->
+                        <input type="text" required id="inboundWH" list="whSuggestions" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <datalist id="whSuggestions"></datalist>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">Quality (Sản lượng)</label>
-                        <input type="number" required id="inboundQuality" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Quality (Số lượng)</label>
+                        <!-- Tắt gợi ý trình duyệt autocomplete="off" để tránh che mắt -->
+                        <input type="number" required id="inboundQuality" autocomplete="off" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
                     </div>
                 </div>
                 <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
@@ -646,7 +656,7 @@
                 updateStats();
                 updatePivotTable();
                 updateChart(); 
-                updateCodeSuggestions();
+                updateInputSuggestions(); // Cập nhật gợi ý Code, Bin, WH
             } catch (err) {
                 console.error("Lỗi đồng bộ dữ liệu Supabase: ", err);
                 alert("Không thể tải dữ liệu từ cơ sở dữ liệu: " + err.message);
@@ -671,6 +681,7 @@
         // --- Khởi tạo ứng dụng ---
         window.addEventListener('DOMContentLoaded', async () => {
             initChart();
+            setupInboundKeyNavigation(); // Khởi chạy cơ chế tự động chuyển ô (Enter Loop)
             await checkLoginState(); // Tiến hành kiểm tra và khởi tạo đăng nhập trước
         });
 
@@ -900,17 +911,43 @@
             }
         }
 
-        // --- TẠO SUGGESTIONS CHO NHẬP KHO (STOCK CODE) ---
-        function updateCodeSuggestions() {
-            const datalist = document.getElementById('codeSuggestions');
-            datalist.innerHTML = '';
-            
-            const uniqueCodes = [...new Set(inventoryData.map(item => item.code).filter(c => c))];
-            uniqueCodes.forEach(code => {
-                const option = document.createElement('option');
-                option.value = code;
-                datalist.appendChild(option);
-            });
+        // --- TẠO VÀ CẬP NHẬT CÁC GỢI Ý (CHỈ CODE, BIN VÀ WH) ---
+        function updateInputSuggestions() {
+            // 1. Gợi ý Mã hàng (Code)
+            const codeDatalist = document.getElementById('codeSuggestions');
+            if (codeDatalist) {
+                codeDatalist.innerHTML = '';
+                const uniqueCodes = [...new Set(inventoryData.map(item => item.code).filter(c => c))];
+                uniqueCodes.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    codeDatalist.appendChild(option);
+                });
+            }
+
+            // 2. Gợi ý Vị trí (Bin)
+            const binDatalist = document.getElementById('binSuggestions');
+            if (binDatalist) {
+                binDatalist.innerHTML = '';
+                const uniqueBins = [...new Set(inventoryData.map(item => item.bin).filter(b => b))];
+                uniqueBins.forEach(bin => {
+                    const option = document.createElement('option');
+                    option.value = bin;
+                    binDatalist.appendChild(option);
+                });
+            }
+
+            // 3. Gợi ý Kho (WH)
+            const whDatalist = document.getElementById('whSuggestions');
+            if (whDatalist) {
+                whDatalist.innerHTML = '';
+                const uniqueWHs = [...new Set(inventoryData.map(item => item.wh).filter(w => w))];
+                uniqueWHs.forEach(wh => {
+                    const option = document.createElement('option');
+                    option.value = wh;
+                    whDatalist.appendChild(option);
+                });
+            }
         }
 
         // --- HIỂN THỊ BẢNG TỒN KHỎ THỰC TẾ ---
@@ -1061,6 +1098,12 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 modal.querySelector('.transform').classList.remove('scale-95');
+                
+                // Tự động đưa con trỏ chuột vào ô Tag ID khi mở Modal Nhập kho
+                if (id === 'inboundModal') {
+                    const tagIdInput = document.getElementById('inboundTagId');
+                    if (tagIdInput) tagIdInput.focus();
+                }
             }, 10);
         }
 
@@ -1073,13 +1116,62 @@
             }, 300);
         }
 
-        // --- XỬ LÝ NHẬP KHO LÊN SUPABASE ---
+        // --- THIẾT LẬP PHÍM ENTER CHUYỂN Ô TỰ ĐỘNG (LOOP INPUTS) ---
+        function setupInboundKeyNavigation() {
+            const inputIds = [
+                'inboundTagId',
+                'inboundBin',
+                'inboundCode',
+                'inboundWH',
+                'inboundQuality'
+            ];
+
+            inputIds.forEach((id, index) => {
+                const inputElement = document.getElementById(id);
+                if (!inputElement) return;
+
+                inputElement.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        // Nếu chưa phải là ô cuối cùng (Quality)
+                        if (index < inputIds.length - 1) {
+                            e.preventDefault(); // Ngăn không cho form tự động submit sớm
+                            const nextElement = document.getElementById(inputIds[index + 1]);
+                            if (nextElement) {
+                                nextElement.focus();
+                            }
+                        }
+                        // Nếu là ô cuối cùng, Enter sẽ tự động kích hoạt gửi form (onsubmit) để lưu dữ liệu
+                    }
+                });
+            });
+        }
+
+        // --- HIỂN THỊ THÔNG BÁO TRẠNG THÁI NGẮN GỌN TRONG FORM (TRÁNH LÀM GIÁN ĐOẠN) ---
+        function showInboundStatus(message, isError = false) {
+            const statusDiv = document.getElementById('inboundStatusMessage');
+            if (!statusDiv) return;
+
+            statusDiv.innerText = message;
+            if (isError) {
+                statusDiv.className = "block py-2 px-3 rounded-lg text-xs font-semibold text-center text-rose-700 bg-rose-50 border border-rose-200";
+            } else {
+                statusDiv.className = "block py-2 px-3 rounded-lg text-xs font-semibold text-center text-emerald-700 bg-emerald-50 border border-emerald-200";
+            }
+
+            statusDiv.classList.remove('hidden');
+            // Tự động ẩn thông báo sau 2.5 giây
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 2500);
+        }
+
+        // --- XỬ LÝ NHẬP KHO LÊN SUPABASE (VÒNG LẶP LIÊN TỤC) ---
         async function handleInboundSubmit(e) {
             e.preventDefault();
-            const tagId = document.getElementById('inboundTagId').value;
-            const bin = document.getElementById('inboundBin').value;
-            const code = document.getElementById('inboundCode').value;
-            const wh = document.getElementById('inboundWH').value;
+            const tagId = document.getElementById('inboundTagId').value.trim();
+            const bin = document.getElementById('inboundBin').value.trim();
+            const code = document.getElementById('inboundCode').value.trim();
+            const wh = document.getElementById('inboundWH').value.trim();
             const quality = Number(document.getElementById('inboundQuality').value);
 
             try {
@@ -1089,15 +1181,27 @@
 
                 if (error) throw error;
 
+                // Lưu log lịch sử hoạt động
                 await logActivity('NHAP_KHO', tagId, code, bin, wh, quality, 'Nhập dữ liệu kho mới');
 
-                closeModal('inboundModal');
+                // Dọn sạch nội dung các ô nhập liệu
                 document.getElementById('inboundForm').reset();
-                alert('Đã thêm dữ liệu nhập kho!');
+                
+                // Hiển thị thông báo trạng thái không chặn màn hình
+                showInboundStatus(`Đã lưu thành công mã hàng: ${code}`);
+
+                // Đồng bộ và tải lại dữ liệu mới nhất dưới nền
                 await fetchFromSupabase(); 
+
+                // Tự động đưa con trỏ chuột quay trở lại ô Tag ID đầu tiên cho lượt nhập tiếp theo
+                const tagIdInput = document.getElementById('inboundTagId');
+                if (tagIdInput) {
+                    tagIdInput.focus();
+                }
+
             } catch (err) {
                 console.error("Lỗi khi thêm mới dữ liệu: ", err);
-                alert("Nhập kho thất bại: " + err.message);
+                showInboundStatus("Lỗi nhập dữ liệu: " + err.message, true);
             }
         }
 
