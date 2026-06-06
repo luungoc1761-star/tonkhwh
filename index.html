@@ -521,10 +521,11 @@
             document.getElementById('loginScreen').classList.remove('hidden');
         }
 
-        // --- XỬ LÝ ĐĂNG NHẬP ---
+        // --- XỬ LÝ ĐĂNG NHẬP (ĐÃ ĐƯỢC CẬP NHẬT TRÁNH LỖI PHÂN BIỆT CHỮ HOA/THƯỜNG) ---
         async function handleLoginSubmit(e) {
             e.preventDefault();
-            const usernameInput = document.getElementById('loginUsername').value.trim().toLowerCase();
+            // Loại bỏ .toLowerCase() để lưu giữ ký tự hoa/thường người dùng chủ động gõ
+            const usernameInput = document.getElementById('loginUsername').value.trim();
             const passwordInput = document.getElementById('loginPassword').value;
             const rememberMe = document.getElementById('rememberMe').checked;
             const errorDiv = document.getElementById('loginErrorMessage');
@@ -535,11 +536,12 @@
             btnSubmit.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Đang xác thực...</span>`;
 
             try {
-                // Kiểm tra tài khoản trong bảng app_users của Supabase
+                // Sử dụng truy vấn .ilike() thay vì .eq() trên cột username 
+                // để hệ thống không phân biệt chữ hoa, chữ thường khi đăng nhập.
                 const { data, error } = await supabaseClient
                     .from('app_users')
                     .select('*')
-                    .eq('username', usernameInput)
+                    .ilike('username', usernameInput)
                     .eq('password', passwordInput)
                     .maybeSingle();
 
@@ -911,7 +913,7 @@
             });
         }
 
-        // --- HIỂN THỊ BẢNG TỒN KHO THỰC TẾ ---
+        // --- HIỂN THỊ BẢNG TỒN KHỎ THỰC TẾ ---
         function renderTable() {
             const tbody = document.getElementById('inventoryTableBody');
             tbody.innerHTML = '';
