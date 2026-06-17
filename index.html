@@ -131,7 +131,7 @@
                 </div>
             </div>
 
-            <!-- Khung biểu đồ -->
+            <!-- Khung biểu đồ (Chỉ vẽ lại khi đồng bộ từ Supabase) -->
             <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[320px] relative">
                 <h4 class="font-bold text-slate-700 mb-2 flex items-center justify-between text-xs sm:text-sm">
                     <span class="truncate"><i class="fa-solid fa-chart-column text-blue-500 mr-2"></i>Biểu Đồ Đối Chiếu Thực Tế - Hệ Thống Theo Mã Hàng</span>
@@ -147,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- BẢNG PHÂN TÍCH PIVOT ĐỐI CHIẾU THỰC TẾ & HỆ THỐNG -->
+            <!-- BẢNG PHÂN TÍCH PIVOT ĐỐI CHIẾU THỰC TẾ & HỆ THỐNG (Khóa tĩnh khi gõ bộ lọc) -->
             <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h4 class="font-bold text-slate-700 mb-3 flex items-center text-xs sm:text-sm">
                     <i class="fa-solid fa-arrows-to-dot text-indigo-500 mr-2"></i>Bảng Phân Tích Pivot Đối Chiếu Sản Lượng Theo Mã Hàng (Stock Code)
@@ -165,7 +165,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 font-medium text-slate-700">
-                            <tr v-for="(item, idx) in filteredComparisonData" :key="item.code" class="hover:bg-slate-50 transition duration-150">
+                            <tr v-for="(item, idx) in comparisonData" :key="item.code" class="hover:bg-slate-50 transition duration-150">
                                 <td class="py-2.5 px-4 text-slate-400 font-mono">{{ idx + 1 }}</td>
                                 <td class="py-2.5 px-4 font-bold text-slate-800">{{ item.code }}</td>
                                 <td class="py-2.5 px-4 text-right font-semibold">{{ Number(item.actual_qty || 0).toLocaleString('vi-VN') }}</td>
@@ -179,7 +179,7 @@
                                     <span v-else class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded border border-rose-200 text-[10px]">Thiếu hụt</span>
                                 </td>
                             </tr>
-                            <tr v-if="filteredComparisonData.length === 0">
+                            <tr v-if="comparisonData.length === 0">
                                 <td colspan="6" class="py-4 text-center text-slate-400">Không có dữ liệu đối chiếu Pivot</td>
                             </tr>
                         </tbody>
@@ -190,14 +190,14 @@
             <!-- Smart Filter Panel -->
             <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h4 class="font-bold text-slate-700 mb-4 flex items-center text-xs sm:text-sm">
-                    <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh toàn diện
+                    <i class="fa-solid fa-filter text-indigo-500 mr-2"></i> Bộ lọc thông minh cho bảng tồn kho thực tế
                 </h4>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
-                    <!-- Đồng bộ hoàn toàn dữ liệu với reactivity Vue 3 -->
-                    <input type="text" v-model="smartFilter" placeholder="Tìm kiếm nhanh... Nhập mã hàng (code), vị trí (bin), mã tag (tagid), hoặc kho (wh)..." class="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm shadow-sm">
+                    <!-- Tìm kiếm nhanh không gây lag trình duyệt do đã cô lập Chart/Pivot -->
+                    <input type="text" v-model="smartFilter" placeholder="Tìm kiếm nhanh trên bảng tồn kho thực tế... Nhập mã hàng, vị trí, mã tag hoặc kho..." class="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm shadow-sm">
                 </div>
             </div>
 
@@ -752,6 +752,7 @@
                 }
             },
             computed: {
+                // Tối ưu hóa: filteredInventory chỉ lọc dữ liệu của bảng kho thực tế
                 filteredInventory() {
                     if (!this.smartFilter) return this.inventoryData;
                     const query = this.smartFilter.toLowerCase().trim();
@@ -765,12 +766,9 @@
                 renderedInventory() {
                     return this.filteredInventory.slice(0, this.inventoryLimit);
                 },
+                // Cô lập hoàn toàn bộ lọc so sánh để tránh lag redraw chart khi nhập ô tìm kiếm
                 filteredComparisonData() {
-                    if (!this.smartFilter) return this.comparisonData;
-                    const query = this.smartFilter.toLowerCase().trim();
-                    return this.comparisonData.filter(item => {
-                        return (item.code || '').toLowerCase().includes(query);
-                    });
+                    return this.comparisonData;
                 },
                 // Log xử lý thời gian 1 ngày gần nhất + nạp thêm cũ hơn
                 filteredLogs() {
@@ -807,7 +805,7 @@
                     return this.filteredInventory.reduce((acc, curr) => acc + Number(curr.quality || 0), 0);
                 },
                 totalSystemQuality() {
-                    return this.filteredComparisonData.reduce((acc, curr) => acc + Number(curr.system_qty || 0), 0);
+                    return this.comparisonData.reduce((acc, curr) => acc + Number(curr.system_qty || 0), 0);
                 },
                 uniqueCodesCount() {
                     return [...new Set(this.filteredInventory.map(item => item.code))].length;
@@ -827,7 +825,8 @@
                 }
             },
             watch: {
-                filteredComparisonData: {
+                // Chỉ vẽ lại biểu đồ khi dữ liệu gốc từ Supabase thực sự thay đổi (tiết kiệm CPU)
+                comparisonData: {
                     handler() {
                         this.updateChart();
                     },
@@ -999,7 +998,7 @@
                         console.error("Lỗi đồng bộ dữ liệu ghilog: ", err);
                     }
                 },
-                // Bổ sung luồng kiểm tra chẽ và nạp lại log sau khi tương tác với database
+                // Đảm bảo log được insert chính xác và hiển thị cảnh báo nếu có lỗi từ Database
                 async logActivity(actionType, tagId, code, bin, wh, quality, details) {
                     try {
                         const { data, error } = await supabaseClient
@@ -1148,7 +1147,7 @@
 
                     let currentItem = null;
 
-                    // Bước 1: Kiểm tra trùng khớp
+                    // Bước 1: Kiểm tra trùng khớp dữ liệu đầu vào
                     if (this.outboundSelectedRowId === null) {
                         // So khớp trực tiếp trên toàn bộ kho cục bộ để hạn chế delay API
                         const matches = this.inventoryData.filter(item => String(item.tag_id || '').trim() === tagId);
@@ -1164,12 +1163,12 @@
                             this.outboundSelectedRowId = matches[0].id; // Mặc định chọn phần tử đầu
                             return; 
                         } else {
-                            // Chỉ có một phần tử duy nhất
+                            // Chỉ có một phần tử duy nhất khớp dữ liệu
                             currentItem = matches[0];
                             this.outboundSelectedRowId = currentItem.id;
                         }
                     } else {
-                        // Người dùng đã tích chọn ID mong muốn từ bảng chọn hoặc luồng cũ
+                        // Người dùng đã tích chọn ID mong muốn từ bảng chọn hoặc luồng trùng lặp cũ
                         currentItem = this.inventoryData.find(item => item.id === this.outboundSelectedRowId);
                     }
 
@@ -1203,7 +1202,7 @@
 
                     try {
                         if (qtyToReduce === null || qtyToReduce >= currentQty) {
-                            // Xóa chính xác theo khóa chính ID
+                            // Xóa chính xác theo khóa chính ID dòng đơn lẻ để tránh thất thoát dữ liệu dòng khác có cùng Tag ID
                             const { error: deleteError } = await supabaseClient
                                 .from('inventory')
                                 .delete()
@@ -1215,7 +1214,7 @@
                             await this.logActivity(logActionType, currentItem.tag_id, currentItem.code, currentItem.bin, currentItem.wh, currentQty, logDetails + ` (Xuất hết dòng ID: #${currentItem.id})`);
                             alert(`Đã xuất toàn bộ dữ liệu dòng ID #${currentItem.id} (Tag: ${currentItem.tag_id}) ra khỏi kho.`);
                         } else {
-                            // Cập nhật số lượng chính xác theo ID dòng
+                            // Cập nhật số lượng chính xác theo ID dòng đơn lẻ
                             const { error: updateError } = await supabaseClient
                                 .from('inventory')
                                 .update({ quality: currentQty - qtyToReduce })
@@ -1467,9 +1466,9 @@
                 },
                 updateChart() {
                     if (!this.mainChart) return;
-                    const labels = this.filteredComparisonData.map(item => item.code);
-                    const actualDataset = this.filteredComparisonData.map(item => Number(item.actual_qty || 0));
-                    const systemDataset = this.filteredComparisonData.map(item => Number(item.system_qty || 0));
+                    const labels = this.comparisonData.map(item => item.code);
+                    const actualDataset = this.comparisonData.map(item => Number(item.actual_qty || 0));
+                    const systemDataset = this.comparisonData.map(item => Number(item.system_qty || 0));
 
                     this.mainChart.data.labels = labels;
                     this.mainChart.data.datasets[0].data = actualDataset;
