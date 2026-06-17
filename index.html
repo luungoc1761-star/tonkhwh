@@ -200,7 +200,7 @@
                 </div>
             </div>
 
-            <!-- Data Table Section (Bảng tồn kho thực tế) -->
+            <!-- Data Table Section (Bảng tồn kho thực tế - Thanh cuộn và tải thêm) -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
                     <h4 class="font-bold text-slate-700 flex items-center text-xs sm:text-sm">
@@ -217,10 +217,11 @@
                     </div>
                 </div>
                 
-                <div class="overflow-x-auto">
+                <!-- Hỗ trợ thanh cuộn dọc max-h để mượt mà khi dữ liệu lớn -->
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table class="w-full text-left border-collapse min-w-[850px]">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                        <thead class="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                            <tr class="text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                                 <th class="py-3.5 px-6">ID</th>
                                 <th class="py-3.5 px-6">Ngày Tạo (Created At)</th>
                                 <th class="py-3.5 px-6">Tag ID</th>
@@ -232,7 +233,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-sm">
-                            <tr v-for="item in paginatedInventory" :key="item.id" class="hover:bg-slate-50 transition duration-150">
+                            <tr v-for="item in renderedInventory" :key="item.id" class="hover:bg-slate-50 transition duration-150">
                                 <td class="py-3.5 px-6 font-semibold font-mono text-slate-500">{{ item.id }}</td>
                                 <td class="py-3.5 px-6 text-slate-500">{{ formatDate(item.created_at) }}</td>
                                 <td class="py-3.5 px-6 font-medium text-slate-900">{{ item.tag_id }}</td>
@@ -248,35 +249,22 @@
                                     </button>
                                 </td>
                             </tr>
-                            <tr v-if="paginatedInventory.length === 0">
+                            <tr v-if="renderedInventory.length === 0">
                                 <td colspan="8" class="py-4 text-center text-slate-400">Không tìm thấy dữ liệu phù hợp</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Pagination Controls cho Bảng Tồn Kho -->
+                <!-- Thanh điều khiển kết xuất động (Chống quá tải Render) -->
                 <div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="text-xs text-slate-500 text-center sm:text-left">
-                        Hiển thị <span class="font-semibold">{{ (inventoryCurrentPage - 1) * inventoryPerPage + 1 }}</span> đến 
-                        <span class="font-semibold">{{ Math.min(inventoryCurrentPage * inventoryPerPage, filteredInventory.length) }}</span> 
-                        trong tổng số <span class="font-semibold">{{ filteredInventory.length }}</span> dòng dữ liệu đã lọc
+                        Đang hiển thị <span class="font-semibold">{{ renderedInventory.length }}</span> dòng trên tổng số <span class="font-semibold">{{ filteredInventory.length }}</span> dòng dữ liệu đã lọc
                     </div>
-                    <div class="flex items-center space-x-1 text-xs">
-                        <button @click="inventoryCurrentPage = 1" :disabled="inventoryCurrentPage === 1" class="px-2.5 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600">
-                            <i class="fa-solid fa-angles-left"></i>
-                        </button>
-                        <button @click="inventoryCurrentPage--" :disabled="inventoryCurrentPage === 1" class="px-2.5 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600">
-                            <i class="fa-solid fa-angle-left"></i>
-                        </button>
-                        <span class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded">
-                            Trang {{ inventoryCurrentPage }} / {{ totalInventoryPages }}
-                        </span>
-                        <button @click="inventoryCurrentPage++" :disabled="inventoryCurrentPage === totalInventoryPages" class="px-2.5 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600">
-                            <i class="fa-solid fa-angle-right"></i>
-                        </button>
-                        <button @click="inventoryCurrentPage = totalInventoryPages" :disabled="inventoryCurrentPage === totalInventoryPages" class="px-2.5 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600">
-                            <i class="fa-solid fa-angles-right"></i>
+                    <div v-if="renderedInventory.length < filteredInventory.length" class="flex justify-center">
+                        <button @click="inventoryLimit += 50" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-4 rounded border border-indigo-200 text-xs transition flex items-center space-x-1">
+                            <i class="fa-solid fa-arrow-down mr-1"></i>
+                            <span>Tải thêm 50 dòng</span>
                         </button>
                     </div>
                 </div>
@@ -306,7 +294,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto max-h-[350px]">
+                <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
                     <table class="w-full text-left border-collapse min-w-[1050px]">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
@@ -347,6 +335,26 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Tải thêm động cho Log hệ thống -->
+                <div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+                    <div class="text-xs text-slate-500 text-center sm:text-left">
+                        Đang hiển thị <span class="font-semibold">{{ filteredLogs.length }}</span> nhật ký hoạt động. 
+                        <span v-if="!showOlderLogs" class="text-amber-600 font-medium ml-1">
+                            (Chỉ hiển thị log phát sinh trong 24 giờ gần nhất)
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button @click="toggleOlderLogs" :class="[showOlderLogs ? 'bg-slate-200 text-slate-800 border-slate-300 hover:bg-slate-300' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100']" class="font-bold py-1.5 px-3 rounded border text-xs transition">
+                            <i :class="[showOlderLogs ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye', 'mr-1']"></i>
+                            <span>{{ showOlderLogs ? 'Ẩn log cũ (ngoài 24h)' : 'Hiện log cũ hơn' }}</span>
+                        </button>
+                        <button v-if="filteredLogs.length >= logLimit" @click="logLimit += 50" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-3 rounded border border-indigo-200 text-xs transition">
+                            <i class="fa-solid fa-arrow-down mr-1"></i>
+                            <span>Tải thêm log</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -487,7 +495,7 @@
             </div>
         </div>
 
-        <!-- Modal Xuất Kho -->
+        <!-- Modal Xuất Kho (Tích hợp logic chọn ID chống trùng lặp Tag) -->
         <div v-if="modals.outbound" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] flex flex-col">
                 <div class="bg-rose-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
@@ -495,6 +503,28 @@
                     <button @click="closeModal('outbound')" class="text-white hover:text-slate-200 text-xl"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <form @submit.prevent="handleOutboundSubmit" class="p-4 sm:p-6 space-y-4 overflow-y-auto">
+                    
+                    <!-- Bảng tích chọn ID khi phát hiện Tag ID bị trùng lặp -->
+                    <div v-if="outboundDuplicates.length > 0" class="bg-amber-50 p-4 rounded-lg border border-amber-200 text-xs space-y-2">
+                        <p class="font-bold text-amber-800 flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5 text-sm"></i> 
+                            PHÁT HIỆN TRÙNG TAG ID ({{ outboundDuplicates.length }} dòng)!
+                        </p>
+                        <p class="text-slate-600">Vui lòng chọn chính xác ID hàng cần xuất dưới đây để tránh mất dữ liệu:</p>
+                        <div class="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                            <label v-for="item in outboundDuplicates" :key="item.id" class="flex items-start space-x-2 bg-white p-2.5 rounded border border-slate-200 cursor-pointer hover:bg-slate-50 transition block">
+                                <input type="radio" :value="item.id" v-model="outboundSelectedRowId" class="mt-0.5 text-rose-600 focus:ring-rose-500 h-4 w-4">
+                                <div class="text-[11px] text-slate-700 leading-tight">
+                                    <span class="font-bold text-slate-900">ID: #{{ item.id }}</span> 
+                                    &bull; Vị trí Bin: <span class="font-semibold text-indigo-700">{{ item.bin }}</span>
+                                    &bull; Mã: <span class="font-semibold text-slate-800">{{ item.code }}</span>
+                                    &bull; Số lượng: <span class="font-bold text-slate-900">{{ item.quality }}</span>
+                                    <div class="text-[9px] text-slate-400 mt-0.5">Ngày tạo: {{ formatDate(item.created_at) }}</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Chế độ xuất (Mode)</label>
                         <select v-model="outboundForm.mode" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-sm">
@@ -569,7 +599,7 @@
             </div>
         </div>
 
-        <!-- ==================== POPUP MODAL CHỈNH SỬA CHI TIẾT (BẢNG NỔI TĂNG ĐỘ NHẬN DIỆN) ==================== -->
+        <!-- Pop up Modal Chỉnh sửa chi tiết dữ liệu -->
         <div v-if="modals.edit" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] flex flex-col transform transition-all duration-300">
                 <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
@@ -661,11 +691,16 @@
                     comparisonData: [],
                     logData: [],
 
-                    // Filtering & Pagination
+                    // Filtering & Progressive Slicing Limits (Thay cho phân trang nặng)
                     smartFilter: '',
                     logFilter: '',
-                    inventoryCurrentPage: 1,
-                    inventoryPerPage: 50,
+                    inventoryLimit: 50,
+                    logLimit: 50,
+                    showOlderLogs: false, // Trạng thái hiển thị log cũ hơn ngoài 1 ngày
+
+                    // Trùng lặp Tag ID khi xuất dữ liệu
+                    outboundDuplicates: [],
+                    outboundSelectedRowId: null,
 
                     // Modals control
                     modals: {
@@ -726,13 +761,8 @@
                                (item.tag_id || '').toLowerCase().includes(query);
                     });
                 },
-                totalInventoryPages() {
-                    return Math.ceil(this.filteredInventory.length / this.inventoryPerPage) || 1;
-                },
-                paginatedInventory() {
-                    const startIndex = (this.inventoryCurrentPage - 1) * this.inventoryPerPage;
-                    const endIndex = startIndex + this.inventoryPerPage;
-                    return this.filteredInventory.slice(startIndex, endIndex);
+                renderedInventory() {
+                    return this.filteredInventory.slice(0, this.inventoryLimit);
                 },
                 filteredComparisonData() {
                     if (!this.smartFilter) return this.comparisonData;
@@ -741,17 +771,31 @@
                         return (item.code || '').toLowerCase().includes(query);
                     });
                 },
+                // Log xử lý thời gian 1 ngày gần nhất + nạp thêm cũ hơn
                 filteredLogs() {
-                    if (!this.logFilter) return this.logData;
-                    const query = this.logFilter.toLowerCase().trim();
-                    return this.logData.filter(log => {
-                        return (log.action_type || '').toLowerCase().includes(query) ||
-                               (log.code || '').toLowerCase().includes(query) ||
-                               (log.tag_id || '').toLowerCase().includes(query) ||
-                               (log.bin || '').toLowerCase().includes(query) ||
-                               (log.username || '').toLowerCase().includes(query) ||
-                               (log.details || '').toLowerCase().includes(query);
-                    });
+                    let logs = this.logData;
+                    
+                    // 1. Tìm kiếm nhanh trong log
+                    if (this.logFilter) {
+                        const query = this.logFilter.toLowerCase().trim();
+                        logs = logs.filter(log => {
+                            return (log.action_type || '').toLowerCase().includes(query) ||
+                                   (log.code || '').toLowerCase().includes(query) ||
+                                   (log.tag_id || '').toLowerCase().includes(query) ||
+                                   (log.bin || '').toLowerCase().includes(query) ||
+                                   (log.username || '').toLowerCase().includes(query) ||
+                                   (log.details || '').toLowerCase().includes(query);
+                        });
+                    }
+
+                    // 2. Lọc thời gian: chỉ hiện log trong vòng 24 giờ gần nhất, trừ khi bật showOlderLogs
+                    if (!this.showOlderLogs) {
+                        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+                        logs = logs.filter(log => new Date(log.created_at).getTime() >= oneDayAgo);
+                    }
+
+                    // 3. Giới hạn tải thêm động
+                    return logs.slice(0, this.logLimit);
                 },
                 // KPI Metrics
                 totalQuality() {
@@ -778,16 +822,19 @@
                 }
             },
             watch: {
-                // Tự động vẽ lại biểu đồ khi dữ liệu đối chiếu thay đổi mà không cần tải lại trang
                 filteredComparisonData: {
                     handler() {
                         this.updateChart();
                     },
                     deep: true
                 },
-                // Đưa trang hiển thị về trang 1 khi lọc
                 smartFilter() {
-                    this.inventoryCurrentPage = 1;
+                    this.inventoryLimit = 50; // Reset số lượng dòng khi lọc tìm kiếm
+                },
+                // Tự động dọn dẹp các phát hiện trùng lặp khi người dùng sửa đổi input tag_id mới
+                'outboundForm.tag_id'() {
+                    this.outboundDuplicates = [];
+                    this.outboundSelectedRowId = null;
                 }
             },
             mounted() {
@@ -978,8 +1025,16 @@
                 },
                 closeModal(name) {
                     this.modals[name] = false;
+                    if (name === 'outbound') {
+                        // Reset trạng thái trùng lặp khi đóng modal
+                        this.outboundDuplicates = [];
+                        this.outboundSelectedRowId = null;
+                    }
                 },
-                // Đổi cấu trúc Sửa dòng sang Bảng Nổi (Modal)
+                toggleOlderLogs() {
+                    this.showOlderLogs = !this.showOlderLogs;
+                    this.logLimit = 50; // Reset số dòng tải khi thay đổi kiểu xem
+                },
                 startRowEdit(item) {
                     this.editForm = {
                         id: item.id,
@@ -1068,29 +1123,64 @@
                         this.inboundStatus.visible = false;
                     }, 2500);
                 },
+                // LOGIC XUẤT KHO CHỐNG TRÙNG LẶP THEO ID ĐƠN LẺ
                 async handleOutboundSubmit() {
                     if (this.isSavingOutbound) return;
-                    this.isSavingOutbound = true;
 
                     const mode = this.outboundForm.mode;
                     const woValue = this.outboundForm.woValue.trim();
                     const tagId = this.outboundForm.tag_id.trim();
                     const qtyToReduce = this.outboundForm.quality ? Number(this.outboundForm.quality) : null;
 
+                    // Bước 1: Nếu chưa có danh sách trùng hoặc người dùng đổi mã Tag ID mới
+                    if (this.outboundDuplicates.length === 0) {
+                        this.isSavingOutbound = true;
+                        try {
+                            const { data, error: fetchError } = await supabaseClient
+                                .from('inventory')
+                                .select('*')
+                                .eq('tag_id', tagId);
+
+                            if (fetchError) throw fetchError;
+
+                            if (!data || data.length === 0) {
+                                alert("Không tìm thấy mã Tag ID này trong hệ thống!");
+                                this.isSavingOutbound = false;
+                                return;
+                            }
+
+                            if (data.length > 1) {
+                                // Phát hiện trùng lặp Tag ID -> Chuyển sang hiển thị radio select
+                                this.outboundDuplicates = data;
+                                this.outboundSelectedRowId = data[0].id; // Mặc định chọn dòng đầu
+                                this.isSavingOutbound = false;
+                                return;
+                            } else {
+                                // Chỉ có 1 dòng độc nhất tương thích
+                                this.outboundSelectedRowId = data[0].id;
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Lỗi kiểm tra Tag ID: " + err.message);
+                            this.isSavingOutbound = false;
+                            return;
+                        }
+                    }
+
+                    // Bước 2: Bắt đầu xử lý xóa hoặc cập nhật theo ID cụ thể đã lựa chọn
+                    this.isSavingOutbound = true;
                     try {
-                        const { data, error: fetchError } = await supabaseClient
-                            .from('inventory')
-                            .select('*')
-                            .eq('tag_id', tagId);
+                        // Xác định chi tiết của đối tượng được chọn
+                        const currentItem = this.outboundDuplicates.length > 0
+                            ? this.outboundDuplicates.find(d => d.id === this.outboundSelectedRowId)
+                            : this.inventoryData.find(i => i.id === this.outboundSelectedRowId);
 
-                        if (fetchError) throw fetchError;
-
-                        if (!data || data.length === 0) {
-                            alert("Không tìm thấy mã Tag ID này trong hệ thống!");
+                        if (!currentItem) {
+                            alert("Không thể định vị được dòng dữ liệu được tích chọn!");
+                            this.isSavingOutbound = false;
                             return;
                         }
 
-                        const currentItem = data[0];
                         const currentQty = Number(currentItem.quality || 0);
 
                         let logActionType = '';
@@ -1108,29 +1198,33 @@
                         }
 
                         if (qtyToReduce === null || qtyToReduce >= currentQty) {
+                            // Xóa chính xác theo khóa chính ID để tránh ảnh hưởng tới dòng có chung Tag ID khác
                             const { error: deleteError } = await supabaseClient
                                 .from('inventory')
                                 .delete()
-                                .eq('tag_id', tagId);
+                                .eq('id', currentItem.id);
                             
                             if (deleteError) throw deleteError;
-                            await this.logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, currentQty, logDetails + ' (Xuất hết)');
-                            alert(`Đã xuất toàn bộ mã tag ${tagId} ra khỏi kho.`);
+                            await this.logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, currentQty, logDetails + ` (Xuất hết dòng ID: #${currentItem.id})`);
+                            alert(`Đã xuất toàn bộ dữ liệu dòng ID #${currentItem.id} thuộc mã tag ${tagId} ra khỏi kho.`);
                         } else {
+                            // Cập nhật số lượng chính xác theo ID
                             const { error: updateError } = await supabaseClient
                                 .from('inventory')
                                 .update({ quality: currentQty - qtyToReduce })
-                                .eq('tag_id', tagId);
+                                .eq('id', currentItem.id);
 
                             if (updateError) throw updateError;
-                            await this.logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, qtyToReduce, logDetails + ` (Xuất 1 phần - giảm ${qtyToReduce})`);
-                            alert(`Đã xuất và trừ đi ${qtyToReduce} sản phẩm thuộc thẻ ${tagId}.`);
+                            await this.logActivity(logActionType, tagId, currentItem.code, currentItem.bin, currentItem.wh, qtyToReduce, logDetails + ` (Xuất một phần dòng ID: #${currentItem.id} - giảm ${qtyToReduce})`);
+                            alert(`Đã xuất và trừ đi ${qtyToReduce} sản phẩm thuộc dòng ID #${currentItem.id} (Tag: ${tagId}).`);
                         }
 
                         this.closeModal('outbound');
                         this.outboundForm.tag_id = '';
                         this.outboundForm.quality = '';
                         this.outboundForm.woValue = '';
+                        this.outboundDuplicates = [];
+                        this.outboundSelectedRowId = null;
                         await this.fetchFromSupabase();
 
                     } catch (err) {
@@ -1140,7 +1234,6 @@
                         this.isSavingOutbound = false;
                     }
                 },
-                // Nhập nhanh CSV Thực tế
                 handleCSVFile(event) {
                     const file = event.target.files[0];
                     if (!file) return;
@@ -1306,7 +1399,6 @@
                         this.isSavingSystem = false;
                     }
                 },
-                // Phím tắt Enter di chuyển nhanh giữa các ô input
                 setupInboundKeyNavigation() {
                     const inputIds = ['inboundTagId', 'inboundBin', 'inboundCode', 'inboundWH', 'inboundQuality'];
                     inputIds.forEach((id, index) => {
@@ -1323,7 +1415,6 @@
                         });
                     });
                 },
-                // Khởi tạo biểu đồ
                 initChart() {
                     const ctx = document.getElementById('comparisonChart').getContext('2d');
                     this.mainChart = new Chart(ctx, {
