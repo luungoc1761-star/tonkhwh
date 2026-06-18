@@ -462,7 +462,7 @@
 
                 <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto max-h-[85vh]">
                     
-                    <!-- Bảng Điều Khiển Nhập Liệu (4 Columns) -->
+                    <!-- Bảng Điều Khiển Nhập Liệu (5 Columns) -->
                     <div class="lg:col-span-5 space-y-5">
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
                             <h4 class="text-xs font-bold text-slate-400 tracking-wider uppercase flex items-center">
@@ -481,7 +481,7 @@
 
                                 <!-- Custom Suggestion Box nổi cực đẹp khi gõ từ 2 ký tự -->
                                 <div v-if="filteredCalcCodes.length > 0" class="absolute z-50 w-full bg-slate-950 border border-slate-700 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl divide-y divide-slate-800">
-                                    <div v-for="item in filteredCalcCodes" :key="item.code" @click="selectCalcCode(item)" class="px-3 py-2 hover:bg-indigo-950 hover:text-white cursor-pointer text-xs text-slate-300 transition duration-150 flex justify-between items-center">
+                                    <div v-for="item in filteredCalcCodes" :key="item.code" @click="selectCalcCode(item)" class="px-3 py-2.5 hover:bg-indigo-950 hover:text-white cursor-pointer text-xs text-slate-300 transition duration-150 flex justify-between items-center">
                                         <span class="font-bold tracking-wider font-mono">{{ item.code }}</span>
                                         <span class="text-indigo-400 font-semibold">{{ Number(item.kg).toFixed(4) }} kg/pcs</span>
                                     </div>
@@ -571,7 +571,7 @@
                             <div class="grid grid-cols-2 gap-4 text-[10px] text-slate-400 pt-4 border-t border-slate-800/60">
                                 <div>
                                     <span class="block text-slate-500 font-semibold">MÃ THIẾT BỊ:</span>
-                                    <span class="font-mono text-slate-300">{{ selectedCalcItem ? selectedCalcItem.code : 'CHƯA CHỌN' }}</span>
+                                    <span class="font-mono text-slate-300 uppercase">{{ selectedCalcItem ? selectedCalcItem.code : 'CHƯA CHỌN' }}</span>
                                 </div>
                                 <div class="text-right">
                                     <span class="block text-slate-500 font-semibold">TỶ LỆ KHỐI LƯỢNG:</span>
@@ -1045,6 +1045,35 @@
                 },
                 smartFilter() {
                     this.inventoryLimit = 50; // Reset số lượng dòng khi lọc tìm kiếm
+                },
+                // Tự động dọn dẹp các phát hiện trùng lặp khi người dùng sửa đổi input tag_id mới
+                'outboundForm.tag_id'() {
+                    this.outboundDuplicates = [];
+                    this.outboundSelectedRowId = null;
+                },
+                // BỘ PHÁT HIỆN MÃ KHỚP THỜI GIAN THỰC (REAL-TIME AUTO-MATCH WATCHER)
+                'calcForm.code'(newVal) {
+                    if (!newVal) {
+                        this.selectedCalcItem = null;
+                        this.animateValue('pcs', 0);
+                        this.animateValue('kg', 0);
+                        return;
+                    }
+                    const query = newVal.trim().toLowerCase();
+                    const match = this.materialWeights.find(item => 
+                        String(item.code || '').trim().toLowerCase() === query
+                    );
+                    if (match) {
+                        this.selectedCalcItem = match;
+                        // Tự động kích hoạt lại quy đổi nếu ô nhập liệu trước đó đã có sẵn giá trị
+                        if (this.calcForm.pcs !== null && this.calcForm.pcs !== '') {
+                            this.onCalcPcsInput();
+                        } else if (this.calcForm.kg !== null && this.calcForm.kg !== '') {
+                            this.onCalcKgInput();
+                        }
+                    } else {
+                        this.selectedCalcItem = null;
+                    }
                 }
             },
             mounted() {
@@ -1197,7 +1226,7 @@
                         if (data && data.length > 0) {
                             allData = allData.concat(data);
                             if (data.length < pageSize) {
-                                hasMore = false;
+                                  hasMore = false;
                             } else {
                                 page++;
                             }
@@ -1277,17 +1306,26 @@
                 },
                 async fetchFromSupabase() {
                     try {
-                        const [invData, sysData, compData, weightData] = await Promise.all([
+                        // Tách riêng biệt tải dữ liệu định lượng và dữ liệu kho để tránh lỗi một bên ảnh hưởng tới bên khác
+                        const [invData, sysData, compData] = await Promise.all([
                             this.fetchAllRows('inventory'),
                             this.fetchAllRows('system_inventory'),
-                            this.fetchAllComparison(),
-                            supabaseClient.from('material_weights').select('*').order('code', { ascending: true })
+                            this.fetchAllComparison()
                         ]);
 
                         this.inventoryData = invData || [];
                         this.systemInventoryData = sysData || [];
                         this.comparisonData = (compData || []).filter(item => Number(item.actual_qty || 0) > 0);
-                        this.materialWeights = weightData.data || [];
+
+                        // Tải riêng bảng material_weights từ Supabase
+                        const { data: weightData, error: weightError } = await supabaseClient
+                            .from('material_weights')
+                            .select('*')
+                            .order('code', { ascending: true });
+                        
+                        if (weightError) throw weightError;
+                        this.materialWeights = weightData || [];
+                        console.log("Đã nạp material_weights hoàn tất. Tổng số bản ghi:", this.materialWeights.length);
 
                     } catch (err) {
                         console.error("Lỗi đồng bộ Supabase: ", err);
@@ -1343,6 +1381,19 @@
                             const input = document.getElementById('inboundTagId');
                             if (input) input.focus();
                         });
+                    }
+                    if (name === 'calc') {
+                        console.log("Mở bảng quy đổi. Dữ liệu mảng materialWeights hiện có:", this.materialWeights);
+                        // Khẩn cấp nạp lại nếu mảng dữ liệu trống (Double-Secure)
+                        if (!this.materialWeights || this.materialWeights.length === 0) {
+                            supabaseClient.from('material_weights').select('*').order('code', { ascending: true })
+                                .then(({ data, error }) => {
+                                    if (data) {
+                                        this.materialWeights = data;
+                                        console.log("Khẩn cấp nạp thành công material_weights:", this.materialWeights.length);
+                                    }
+                                });
+                        }
                     }
                 },
                 closeModal(name) {
